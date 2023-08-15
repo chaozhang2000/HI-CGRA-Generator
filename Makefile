@@ -2,6 +2,7 @@ TOP = TopMain
 SIM_TOP = simMain
 BUILD_DIR = ./build
 OUT_DIR = ./out
+TEST_DIR = ./test_run_dir
 TOP_V = $(BUILD_DIR)/$(TOP).v
 SCALA_FILE = $(shell find ./src/main/scala -name '*.scala')
 SCALA_TEST_FILE = $(shell find ./src/main/scala -name '*.scala')
@@ -18,11 +19,11 @@ $(TOP_V): $(SCALA_FILE)
 
 verilog: $(TOP_V)
 
-chiselsim: $(SCALA_FILE) $(SCALA_TEST_FILE)
-	./mill chiselModule.runMain sim.$(SIM_TOP)
+test:
+	./mill chiselModule.test 
 clean:
-	rm -rf $(BUILD_DIR)
+	rm -rf $(BUILD_DIR) $(TEST_DIR)
 cleanall:
-	rm -rf $(BUILD_DIR) $(OUT_DIR)
+	rm -rf $(BUILD_DIR) $(OUT_DIR) $(TEST_DIR)
 
-.PHONY: verilog clean cleanall help 
+.PHONY: verilog clean cleanall help test
