@@ -5,7 +5,10 @@ import chiseltest._
 import org.scalatest.flatspec.AnyFlatSpec
 
 /**
- * Test the Binary Mealy state machine design
+ * Test the Mem,firstly test the SyncReadMem and then test Mem.
+ * the data 0,1,2,3,4,5...is write into Mem by using all writeports parallelly, you can read the code in write method below
+ * so the 2^width >=depth is needed
+ * then we read data that has been written to memory,and check if they are the right value
  */
 class MemTester extends AnyFlatSpec with ChiselScalatestTester{
   "Mem test" should "pass" in {

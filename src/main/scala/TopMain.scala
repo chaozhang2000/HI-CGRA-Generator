@@ -6,12 +6,6 @@ import chisel3.tester._
 import chisel3.tester.RawTester.test
 object TopMain extends App {
   (new ChiselStage).execute(args,
-    Seq(ChiselGeneratorAnnotation(()=> new Crossbar(5,6,8)))
-    )
-  (new ChiselStage).execute(args,
-    Seq(ChiselGeneratorAnnotation(()=> new utils.RegisterFile(2,32,32)))
-    )
-  (new ChiselStage).execute(args,
-    Seq(ChiselGeneratorAnnotation(()=> new utils.Memutil(2,2,64,64,true)))
+    Seq(ChiselGeneratorAnnotation(()=> new utils.Crossbar(5,6,8)))
     )
 }
