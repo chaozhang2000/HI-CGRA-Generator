@@ -8,4 +8,7 @@ object TopMain extends App {
   (new ChiselStage).execute(args,
     Seq(ChiselGeneratorAnnotation(()=> new utils.Crossbar(5,6,8)))
     )
+  (new ChiselStage).execute(args,
+    Seq(ChiselGeneratorAnnotation(()=> new utils.PipelineConnectTest()))
+    )
 }
