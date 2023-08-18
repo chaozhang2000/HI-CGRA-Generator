@@ -11,4 +11,13 @@ object TopMain extends App {
   (new ChiselStage).execute(args,
     Seq(ChiselGeneratorAnnotation(()=> new utils.PipelineConnectTest()))
     )
+  val list = List("add","sub","mul","div")
+  val width = 32
+  val num = 3 
+  (new ChiselStage).execute(args,
+    Seq(ChiselGeneratorAnnotation(()=> new utils.Alu(width,num,list)))
+    )
+  //(new ChiselStage).execute(args,
+  //  Seq(ChiselGeneratorAnnotation(()=> new Tile()))
+  //  )
 }
