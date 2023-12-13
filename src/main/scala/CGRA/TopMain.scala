@@ -1,4 +1,4 @@
-package top
+package top 
 import chisel3._
 import chisel3.util._
 import chisel3.stage.{ChiselGeneratorAnnotation,ChiselStage}
@@ -16,6 +16,9 @@ object TopMain extends App {
   val num = 3 
   (new ChiselStage).execute(args,
     Seq(ChiselGeneratorAnnotation(()=> new utils.Alu(width,num,list)))
+    )
+  (new ChiselStage).execute(args,
+    Seq(ChiselGeneratorAnnotation(()=> new CrossbarDecouple(5,6,32)))
     )
   //(new ChiselStage).execute(args,
   //  Seq(ChiselGeneratorAnnotation(()=> new Tile()))

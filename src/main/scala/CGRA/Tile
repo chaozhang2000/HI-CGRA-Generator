@@ -1,0 +1,25 @@
+package top
+import chisel3._
+import chisel3.util._
+
+class Tile extends Module with TileParams {
+  val io = IO(new Bundle {
+    val in = Decoupled(Input(Vec(tileInputNum, UInt(crossbarDataWidth.W))))
+    val out = Decoupled(Output(Vec(tileOutputNum, UInt(crossbarDataWidth.W))))
+  })
+  val crossbarbits = Module(new utils.Crossbar(crossbarInputNum,crossbarOutputNum,crossbarDataWidth))
+  val crossbarvalid = Module(new utils.Crossbar(crossbarInputNum,crossbarOutputNum,1))
+  val crossbarready = Module(new utils.Crossbar(crossbarInputNum,crossbarOutputNum,1))
+  for(i<-0 until tileInputNum) {
+    crossbarbits.in(i) := io.in(i).bits
+    crossbarvalid.in(i) := io.in(i).valid
+  }
+  for(i<-tileInputNum until crossbarInputNum) {
+    crossbarbits.in(i):= 0.U
+    crossbarvalid.in(i) := 0.U
+  }
+  for(i<-0 until tileOutputNum) {
+    io.out(i).bits := crossbarbits.out(i)
+    io.out(i).valids:= crossbarvalid.out(i)
+  }
+}
