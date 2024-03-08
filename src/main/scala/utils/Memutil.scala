@@ -1,16 +1,16 @@
 package utils
 import chisel3._
 import chisel3.util._
-  class Memutil(readPorts:Int,writePorts:Int,depth:Int,width:Int,syncRead:Boolean)extends Module {
-    require(readPorts >= 0 &&writePorts >=0 && depth >0 && width >0)
+  class Memutil(readPorts:Int = 1,writePorts:Int = 1,depth:Int,dwidth:Int,awidth:Int,syncRead:Boolean = true)extends Module {
+    require(readPorts > 0 &&writePorts >0 && depth >0 && dwidth >0 && awidth >0)
   val io = IO(new Bundle{
     val wen   = Input(Vec(writePorts,Bool()))
-    val waddr= Input(Vec(writePorts, UInt(log2Ceil(depth).W)))
-    val wdata = Input(Vec(writePorts, UInt(width.W)))
-    val raddr = Input(Vec(readPorts, UInt(log2Ceil(depth).W)))
-    val rdata = Output(Vec(readPorts, UInt(width.W)))
+    val waddr= Input(Vec(writePorts, UInt(awidth.W)))
+    val wdata = Input(Vec(writePorts, UInt(dwidth.W)))
+    val raddr = Input(Vec(readPorts, UInt(awidth.W)))
+    val rdata = Output(Vec(readPorts, UInt(dwidth.W)))
   })
-    val mem = if (syncRead==true) {SyncReadMem(depth, UInt(width.W))} else {Mem(depth,UInt(width.W))}
+    val mem = if (syncRead==true) {SyncReadMem(depth, UInt(dwidth.W))} else {Mem(depth,UInt(dwidth.W))}
     for (i <- 0 until readPorts){
       io.rdata(i) := mem.read(io.raddr(i))
     }

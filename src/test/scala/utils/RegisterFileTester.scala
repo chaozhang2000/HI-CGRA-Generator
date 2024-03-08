@@ -4,10 +4,6 @@ import chisel3._
 import chiseltest._
 import org.scalatest.flatspec.AnyFlatSpec
 
-/**
- * Test the Binary Mealy state machine design
- */
-
 class RegisterFileTester extends AnyFlatSpec with ChiselScalatestTester{
   "RegisterFile test" should "pass" in {
     val readPorts = 2

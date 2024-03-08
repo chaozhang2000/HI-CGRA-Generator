@@ -14,10 +14,11 @@ class MemTester extends AnyFlatSpec with ChiselScalatestTester{
   "Mem test" should "pass" in {
     val readPorts = 2
     val writePorts = 2
-    val width =32
+    val dwidth =32
+    val awidth =32
     val depth =64 
     var syncRead = true
-    test(new Memutil(readPorts,writePorts,depth,width,syncRead)) { c=>
+    test(new Memutil(readPorts = readPorts,writePorts = writePorts,depth = depth,dwidth = dwidth,awidth = awidth, syncRead = syncRead)) { c=>
       def readExpect(addr: Int, value: Int, port: Int = 0): Unit = {
         c.io.raddr(port).poke(addr.U)
         c.clock.step(1)
@@ -34,15 +35,15 @@ class MemTester extends AnyFlatSpec with ChiselScalatestTester{
         c.io.wen(i).poke(false.B)
         }
         }
-      for (i <- 0 until depth by writePorts) {
+      for (i <- 0  until depth  by writePorts) {
         write(i, i)
         }
-      for (i <-0 until (depth/writePorts)*writePorts){
+      for (i <-0  until (depth /writePorts)*writePorts){
         readExpect(i,i)
       }
     }
     syncRead = false
-    test(new Memutil(readPorts,writePorts,depth,width,syncRead)) { c=>
+    test(new Memutil(readPorts = readPorts,writePorts = writePorts,depth = depth,dwidth = dwidth,awidth = awidth, syncRead = syncRead)) { c=>
       def readExpect(addr: Int, value: Int, port: Int = 0): Unit = {
         c.io.raddr(port).poke(addr.U)
         c.io.rdata(port).expect(value.U)
@@ -58,10 +59,10 @@ class MemTester extends AnyFlatSpec with ChiselScalatestTester{
         c.io.wen(i).poke(false.B)
         }
         }
-      for (i <- 0 until depth by writePorts) {
+      for (i <- 0  until depth  by writePorts) {
         write(i, i)
         }
-      for (i <-0 until (depth/writePorts)*writePorts){
+      for (i <-0  until (depth /writePorts)*writePorts){
         readExpect(i,i)
       }
     }
