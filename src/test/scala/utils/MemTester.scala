@@ -12,57 +12,47 @@ import org.scalatest.flatspec.AnyFlatSpec
  */
 class MemTester extends AnyFlatSpec with ChiselScalatestTester{
   "Mem test" should "pass" in {
-    val readPorts = 2
-    val writePorts = 2
     val dwidth =32
     val awidth =32
     val depth =64 
     var syncRead = true
-    test(new Memutil(readPorts = readPorts,writePorts = writePorts,depth = depth,dwidth = dwidth,awidth = awidth, syncRead = syncRead)) { c=>
-      def readExpect(addr: Int, value: Int, port: Int = 0): Unit = {
-        c.io.raddr(port).poke(addr.U)
+    test(new Memutil(depth = depth,dwidth = dwidth,awidth = awidth, syncRead = syncRead)) { c=>
+      def readExpect(addr: Int, value: Int): Unit = {
+        c.io.raddr.poke(addr.U)
         c.clock.step(1)
-        c.io.rdata(port).expect(value.U)
+        c.io.rdata.expect(value.U)
         }
       def write(addr: Int, value: Int): Unit = {
-        for (i <-0 until writePorts){
-        c.io.wen(i).poke(true.B)
-        c.io.wdata(i).poke((value+i).U)
-        c.io.waddr(i).poke((addr+i).U)
-        }
+        c.io.wen.poke(true.B)
+        c.io.wdata.poke(value.U)
+        c.io.waddr.poke(addr.U)
         c.clock.step(1)
-        for (i <-0 until writePorts){
-        c.io.wen(i).poke(false.B)
+        c.io.wen.poke(false.B)
         }
-        }
-      for (i <- 0  until depth  by writePorts) {
+      for (i <- 0  until depth) {
         write(i, i)
         }
-      for (i <-0  until (depth /writePorts)*writePorts){
+      for (i <-0  until depth){
         readExpect(i,i)
       }
     }
     syncRead = false
-    test(new Memutil(readPorts = readPorts,writePorts = writePorts,depth = depth,dwidth = dwidth,awidth = awidth, syncRead = syncRead)) { c=>
-      def readExpect(addr: Int, value: Int, port: Int = 0): Unit = {
-        c.io.raddr(port).poke(addr.U)
-        c.io.rdata(port).expect(value.U)
+    test(new Memutil(depth = depth,dwidth = dwidth,awidth = awidth, syncRead = syncRead)) { c=>
+      def readExpect(addr: Int, value: Int): Unit = {
+        c.io.raddr.poke(addr.U)
+        c.io.rdata.expect(value.U)
         }
       def write(addr: Int, value: Int): Unit = {
-        for (i <-0 until writePorts){
-        c.io.wen(i).poke(true.B)
-        c.io.wdata(i).poke((value+i).U)
-        c.io.waddr(i).poke((addr+i).U)
-        }
+        c.io.wen.poke(true.B)
+        c.io.wdata.poke(value.U)
+        c.io.waddr.poke(addr.U)
         c.clock.step(1)
-        for (i <-0 until writePorts){
-        c.io.wen(i).poke(false.B)
+        c.io.wen.poke(false.B)
         }
-        }
-      for (i <- 0  until depth  by writePorts) {
+      for (i <- 0  until depth) {
         write(i, i)
         }
-      for (i <-0  until (depth /writePorts)*writePorts){
+      for (i <-0  until depth){
         readExpect(i,i)
       }
     }

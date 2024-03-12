@@ -1,4 +1,4 @@
-package top
+package cgra
 
 trait Commonparams{
   val dwidth = 32
