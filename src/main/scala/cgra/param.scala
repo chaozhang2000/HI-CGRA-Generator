@@ -48,6 +48,21 @@ trait DataMemparams extends Commonparams{
   val dataMemSize = datamemSize
 }
 
-trait CGRAparams extends Commonparams with Crossbarparams with Aluparams with Srcmuxparams with InstMemparams with ConstMemparams with ShiftconstMemparams with DataMemparams{
+trait Instparams{
+  val Shiftconst1startbit = 0
+  val Shiftconst1bits = 1
+  val Shiftconst2startbit = 1
+  val Shiftconst2bits = 1
+  val Fukeystartbit = 2
+  val Fukeybits = 8
+  val Src1keystartbit = 10
+  val Src1keybits = 5
+  val Src2keystartbit = 15
+  val Src2keybits = 5
+  val Linkkeystartbit = 20
+  val Linkkeybits = 3
+}
+
+trait CGRAparams extends Commonparams with Crossbarparams with Aluparams with Srcmuxparams with InstMemparams with ConstMemparams with ShiftconstMemparams with DataMemparams with Instparams{
 
 }
