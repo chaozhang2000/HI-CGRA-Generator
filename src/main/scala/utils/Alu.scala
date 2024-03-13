@@ -11,6 +11,7 @@ import chisel3.util._
 
 object AluOpcode {
   def apply() = Map(
+    "nul"->  0.U,
     "add" -> 1.U,
     "sub" -> 2.U,
     "mul" -> 3.U,
@@ -18,11 +19,13 @@ object AluOpcode {
     )
 }
 object AluOperations{
+  val nul: (SInt,SInt) => SInt = {(src1,src2) => 0.S}
   val add: (SInt,SInt) => SInt = {(src1,src2) => src1+src2}
   val sub: (SInt,SInt) => SInt = {(src1,src2) => src1-src2}
   val mul: (SInt,SInt) => SInt = {(src1,src2) => src1*src2}
   val div: (SInt,SInt) => SInt = {(src1,src2) => src1/src2}
   def apply() = Map(
+    "nul" -> nul,
     "add" -> add,
     "sub" -> sub,
     "mul" -> mul,
@@ -31,7 +34,7 @@ object AluOperations{
 }
 class Alu (dataWidth:Int,functionNum:Int,opneed:List[String])extends Module {
   val io = IO(new Bundle {
-    val fn = Input(UInt(log2Ceil(functionNum+1).W))
+    val fn = Input(UInt(log2Ceil(functionNum).W))
     val src1 = Input(SInt(dataWidth.W))
     val src2 = Input(SInt(dataWidth.W))
     val result = Output(SInt(dataWidth.W))

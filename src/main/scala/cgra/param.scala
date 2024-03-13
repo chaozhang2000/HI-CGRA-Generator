@@ -4,7 +4,7 @@ trait Commonparams{
   val dwidth = 32
   val awidth = 32
   val pelinkNum = 4
-  val opts = List("add","mul")
+  val opts = List("nul","add","mul")
   val loopNum = 3
   val instmemSize = 8
   val instmemStartaddr = 0
@@ -14,7 +14,7 @@ trait Commonparams{
 }
 
 trait Crossbarparams extends Commonparams{
-  val crossbarInputNum = pelinkNum + 1//fureg
+  val crossbarInputNum = pelinkNum + 1 + 1 + 1//fureg,furesult,zero
   val crossbarOutputNum = pelinkNum
   val crossbarDataWidth = dwidth
 }

@@ -9,6 +9,7 @@ trait CrossbarTestParam {
 trait AluTestParam{
   val dataWidth = 32
   val opneed = List(
+      "nul",
       "add",
       "sub",
       "mul",

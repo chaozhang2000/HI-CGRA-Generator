@@ -4,7 +4,7 @@ import chisel3.util._
 class GenericMux(inWidth: Int, numOfInputs: Int) extends Module {
   val io = IO(new Bundle {
     val in = Input(Vec(numOfInputs, UInt(inWidth.W))) // 输入
-    val sel = Input(UInt((math.log(numOfInputs) / math.log(2)).ceil.toInt.W)) // 选择信号
+    val sel = Input(UInt(log2Ceil(numOfInputs).W)) // 选择信号
     val out = Output(UInt(inWidth.W)) // 输出
   })
 

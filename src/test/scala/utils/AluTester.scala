@@ -18,9 +18,10 @@ class AluTester extends AnyFlatSpec with ChiselScalatestTester with AluTestParam
       // This is exhaustive testing, which usually is not possible
       for (a:Int <- 1 to 15) {
         for (b:Int <- 1 to 15) {
-          for (op:Int <- 1 to 4) {
+          for (op:Int <- 0 to 4) {
             val result :Int=
               op match {
+                case 0 => 0
                 case 1 => (a + b)
                 case 2 => (a - b)
                 case 3 => (a * b)
