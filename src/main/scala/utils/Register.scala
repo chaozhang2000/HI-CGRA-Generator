@@ -1,11 +1,11 @@
 package utils
 import chisel3._
 import chisel3.util._
-class Register(width: Int, resetValue: SInt) extends Module {
+class Register(width: Int, resetValue: UInt) extends Module {
     val io = IO(new Bundle {
-      val inData = Input(SInt(width.W))
+      val inData = Input(UInt(width.W))
       val enable = Input(Bool())
-      val outData = Output(SInt(width.W))
+      val outData = Output(UInt(width.W))
     })
       val reg = RegInit(resetValue)
         when(io.enable) {

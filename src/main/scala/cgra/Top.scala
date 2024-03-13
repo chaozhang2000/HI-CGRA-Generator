@@ -17,10 +17,13 @@ object AddMain extends App with CGRAparams{
   emitVerilog(new utils.GenericMux(srcmuxWidth,srcmuxInputNum),Array("--target-dir", "generated"))
 
   println("Generating the Reg")
-  emitVerilog(new utils.Register(dwidth,0.S),Array("--target-dir", "generated"))
+  emitVerilog(new utils.Register(dwidth,0.U),Array("--target-dir", "generated"))
 
   println("Generating the PEDecode")
   emitVerilog(new cgra.PEDecode(),Array("--target-dir", "generated"))
+
+  println("Generating the PEctrlregs")
+  emitVerilog(new cgra.PEctrlregs(),Array("--target-dir", "generated"))
 
   println("Generating the PE")
   emitVerilog(new cgra.PE(4,4),Array("--target-dir", "generated"))
