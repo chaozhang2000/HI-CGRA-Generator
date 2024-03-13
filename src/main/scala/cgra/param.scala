@@ -72,6 +72,8 @@ trait Instparams{
   val Src2keybits = 5
   val Linkkeystartbit = 20
   val Linkkeybits = 3
+  
+  val Srcconstcode = 2
 }
 
 trait PEctrlregsparams extends Commonparams{

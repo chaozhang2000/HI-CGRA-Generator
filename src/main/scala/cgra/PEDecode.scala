@@ -9,6 +9,8 @@ class PEDecodeIO extends Bundle with CGRAparams{
   val src2key = Output(UInt(log2Ceil(srcmuxInputNum).W))
   val haveshiftconst1 = Output(Bool())
   val haveshiftconst2 = Output(Bool())
+  val useconst1 = Output(Bool())
+  val useconst2 = Output(Bool())
   val linkkey = Output(Vec(pelinkNum,UInt(log2Ceil(crossbarInputNum).W)))
 }
 
@@ -26,4 +28,7 @@ class PEDecode extends Module with CGRAparams{
   }
   io.haveshiftconst1 := io.inst(Shiftconst1startbit)
   io.haveshiftconst2 := io.inst(Shiftconst2startbit)
+
+  io.useconst1 := io.inst(Src1keystartbit+log2Ceil(srcmuxInputNum)-1,Src1keystartbit) === Srcconstcode.U 
+  io.useconst2 := io.inst(Src2keystartbit+log2Ceil(srcmuxInputNum)-1,Src2keystartbit) === Srcconstcode.U 
 }
