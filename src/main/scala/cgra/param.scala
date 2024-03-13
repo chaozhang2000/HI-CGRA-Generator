@@ -6,9 +6,12 @@ trait Commonparams{
   val pelinkNum = 4
   val opts = List("nul","add","mul")
   val loopNum = 3
+  val instmemNum = pelinkNum + 1 + 1
   val instmemSize = 8
   val instmemStartaddr = 0
+  val constmemNum = 2
   val constmemSize = 8
+  val constmemStartaddr = instmemStartaddr + instmemNum * instmemSize
   val shiftconstmemSize = 8
   val datamemSize = 512
 }
@@ -36,8 +39,10 @@ trait InstMemparams extends Commonparams{
   val instMemStartaddr = instmemStartaddr 
 }
 trait ConstMemparams extends Commonparams{
-  val constMemWidth = dwidth
+  val constMemdWidth = dwidth
+  val constMemaWidth = awidth
   val constMemSize = constmemSize
+  val constMemStartaddr = constmemStartaddr
 }
 trait ShiftconstMemparams extends Commonparams{
   val shiftconstMemWidth = dwidth
