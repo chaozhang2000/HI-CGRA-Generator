@@ -42,6 +42,41 @@ class PE(inputCount:Int,outputCount:Int) extends Module with CGRAparams{
   val Alu = Module(new utils.Alu(dataWidth =aluwidth ,functionNum=aluoptnum ,opneed=aluoptlist))
   val Crossbar = Module(new utils.Crossbar(inputNum =crossbarInputNum,outputNum =crossbarOutputNum,dataWidth =crossbarDataWidth))
 
+  val Instnumreg = PEctrlregs.io.outData(InstnumIndex)
+  val IInumreg = PEctrlregs.io.outData(IInumIndex)
+	val FinishInstcntreg = PEctrlregs.io.outData(FinishInstcntIndex)
+	val FinishIIcntreg = PEctrlregs.io.outData(FinishIIcntIndex)
+	val Constnum1reg = PEctrlregs.io.outData(Constnum1Index)
+	val Constnum2reg = PEctrlregs.io.outData(Constnum2Index)
+	val Shiftconstnum1reg = PEctrlregs.io.outData(Shiftconstnum1Index)
+	val Shiftconstnum2reg = PEctrlregs.io.outData(Shiftconstnum2Index)
+	val I_initreg = PEctrlregs.io.outData(I_initIndex)
+	val J_initreg = PEctrlregs.io.outData(J_initIndex)
+	val K_initreg = PEctrlregs.io.outData(K_initIndex)
+	val I_increg = PEctrlregs.io.outData(I_incIndex)
+	val J_increg = PEctrlregs.io.outData(J_incIndex)
+	val K_increg = PEctrlregs.io.outData(K_incIndex)
+	val I_threadreg = PEctrlregs.io.outData(I_threadIndex)
+	val J_threadreg = PEctrlregs.io.outData(J_threadIndex)
+	val K_threadreg = PEctrlregs.io.outData(K_threadIndex)
+
+	val Instcntreg = PEctrlregs.io.outData(InstcntIndex)
+	val IIcntreg = PEctrlregs.io.outData(IIcntIndex)
+	val Constcnt1reg = PEctrlregs.io.outData(Constcnt1Index)
+	val Constcnt2reg = PEctrlregs.io.outData(Constcnt2Index)
+	val Shiftconstcnt1reg = PEctrlregs.io.outData(Shiftconstcnt1Index)
+	val Shiftconstcnt2reg = PEctrlregs.io.outData(Shiftconstcnt2Index)
+	val Kreg = PEctrlregs.io.outData(KIndex)
+	val Jreg = PEctrlregs.io.outData(JIndex)
+	val Ireg = PEctrlregs.io.outData(IIndex)
+	val Finishreg = PEctrlregs.io.outData(FinishIndex)
+
+  val instcntregnext = Mux((Instcntreg<Instnumreg-1.U)&(Instnumreg > 0.U),Instcntreg + 1.U,0.U)
+  val constcnt1regnext = Mux((Constcnt1reg < Constnum1reg-1.U)&(Constnum1reg > 0.U),Constcnt1reg + 1.U,0.U)
+  val constcnt2regnext = Mux((Constcnt2reg < Constnum2reg-1.U)&(Constnum2reg > 0.U),Constcnt2reg + 1.U,0.U)
+  val shiftconstcnt1regnext = Mux((Shiftconstcnt1reg < Shiftconstnum1reg - 1.U)&(Shiftconstnum1reg>0.U ),Shiftconstcnt1reg + 1.U,0.U)
+  val shiftconstcnt2regnext = Mux((Shiftconstcnt2reg < Shiftconstnum2reg-1.U)&(Shiftconstnum2reg>0.U ),Shiftconstcnt2reg + 1.U,0.U)
+
   //fureg
   Fureg.io.inData := Alu.io.result.asUInt
   Fureg.io.enable := io.run
@@ -54,19 +89,8 @@ class PE(inputCount:Int,outputCount:Int) extends Module with CGRAparams{
   PEctrlregs.io.inData := DontCare
   PEctrlregs.io.wen := DontCare
   PEctrlregs.io.outData:=DontCare
-  val Instcntreg = PEctrlregs.io.outData(InstcntIndex)
-  val Instnumreg = PEctrlregs.io.outData(InstnumIndex)
-  val Constcnt1reg = PEctrlregs.io.outData(Constcnt1Index)
-  val Constcnt2reg = PEctrlregs.io.outData(Constcnt2Index)
-  val Constnum1reg = PEctrlregs.io.outData(Constnum1Index)
-  val Constnum2reg = PEctrlregs.io.outData(Constnum2Index)
-  val Shiftconstcnt1reg = PEctrlregs.io.outData(Shiftconstcnt1Index)
-  val Shiftconstcnt2reg = PEctrlregs.io.outData(Shiftconstcnt2Index)
-  val Shiftconstnum1reg = PEctrlregs.io.outData(Shiftconstnum1Index)
-  val Shiftconstnum2reg = PEctrlregs.io.outData(Shiftconstnum2Index)
 
   //Instcntreg
-  val instcntregnext = Mux((Instcntreg<Instnumreg-1.U)&(Instnumreg > 0.U),Instcntreg + 1.U,0.U)
   PEctrlregs.io.inData(InstcntIndex):=instcntregnext
   PEctrlregs.io.wen(InstcntIndex):= io.run//TODO not only io.run
   io.rdata(10) := Instcntreg
@@ -89,19 +113,15 @@ class PE(inputCount:Int,outputCount:Int) extends Module with CGRAparams{
   Decoder.io.inst := Instmems(0).io.rdata
 
   //Constcnt1reg
-  val constcnt1regnext = Mux((Constcnt1reg < Constnum1reg-1.U)&(Constnum1reg > 0.U),Constcnt1reg + 1.U,0.U)
   PEctrlregs.io.inData(Constcnt1Index) := constcnt1regnext
   PEctrlregs.io.wen(Constcnt1Index):= io.run &(Decoder.io.useconst1)//TODO
   //Constcnt2reg
-  val constcnt2regnext = Mux((Constcnt2reg < Constnum2reg-1.U)&(Constnum2reg > 0.U),Constcnt2reg + 1.U,0.U)
   PEctrlregs.io.inData(Constcnt2Index) := constcnt2regnext
   PEctrlregs.io.wen(Constcnt2Index):= io.run &(Decoder.io.useconst2)//TODO
   //shiftConstcnt1reg
-  val shiftconstcnt1regnext = Mux((Shiftconstcnt1reg < Shiftconstnum1reg - 1.U)&(Shiftconstnum1reg>0.U ),Shiftconstcnt1reg + 1.U,0.U)
   PEctrlregs.io.inData(Shiftconstcnt1Index) := shiftconstcnt1regnext
   PEctrlregs.io.wen(Shiftconstcnt1Index):= io.run &(Decoder.io.haveshiftconst1)//TODO
   //shiftConstcnt2reg
-  val shiftconstcnt2regnext = Mux((Shiftconstcnt2reg < Shiftconstnum2reg-1.U)&(Shiftconstnum2reg>0.U ),Shiftconstcnt2reg + 1.U,0.U)
   PEctrlregs.io.inData(Shiftconstcnt2Index) := shiftconstcnt2regnext
   PEctrlregs.io.wen(Shiftconstcnt2Index):= io.run &(Decoder.io.haveshiftconst2)//
   //Constmems
