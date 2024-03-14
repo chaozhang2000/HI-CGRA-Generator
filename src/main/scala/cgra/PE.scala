@@ -24,7 +24,6 @@ class PE(inputCount:Int,outputCount:Int) extends Module with CGRAparams{
     val const2raddr = Output(UInt(awidth.W))
   val useconst1 = Output(Bool())
   val useconst2 = Output(Bool())
-    val const2rdata = Output(UInt(dwidth.W))
     })
   val PEctrlregs = Module(new PEctrlregs)
   val Fureg = Module(new utils.Register(width = aluwidth,resetValue = 0.U))
@@ -55,15 +54,25 @@ class PE(inputCount:Int,outputCount:Int) extends Module with CGRAparams{
   PEctrlregs.io.inData := DontCare
   PEctrlregs.io.wen := DontCare
   PEctrlregs.io.outData:=DontCare
+  val Instcntreg = PEctrlregs.io.outData(InstcntIndex)
+  val Instnumreg = PEctrlregs.io.outData(InstnumIndex)
+  val Constcnt1reg = PEctrlregs.io.outData(Constcnt1Index)
+  val Constcnt2reg = PEctrlregs.io.outData(Constcnt2Index)
+  val Constnum1reg = PEctrlregs.io.outData(Constnum1Index)
+  val Constnum2reg = PEctrlregs.io.outData(Constnum2Index)
+  val Shiftconstcnt1reg = PEctrlregs.io.outData(Shiftconstcnt1Index)
+  val Shiftconstcnt2reg = PEctrlregs.io.outData(Shiftconstcnt2Index)
+  val Shiftconstnum1reg = PEctrlregs.io.outData(Shiftconstnum1Index)
+  val Shiftconstnum2reg = PEctrlregs.io.outData(Shiftconstnum2Index)
 
   //Instcntreg
-  val instcntregnext = Mux(PEctrlregs.io.outData(InstcntIndex)<7.U,PEctrlregs.io.outData(InstcntIndex) + 1.U,0.U)//TODO 7U should be Instnum
-  PEctrlregs.io.inData(InstcntIndex):= instcntregnext
+  val instcntregnext = Mux((Instcntreg<Instnumreg-1.U)&(Instnumreg > 0.U),Instcntreg + 1.U,0.U)
+  PEctrlregs.io.inData(InstcntIndex):=instcntregnext
   PEctrlregs.io.wen(InstcntIndex):= io.run//TODO not only io.run
-  io.rdata(10) := PEctrlregs.io.outData(InstcntIndex)
+  io.rdata(10) := Instcntreg
 
   //Instmems
-  Instmems.foreach(_.io.raddr:= Mux(io.run,instcntregnext,PEctrlregs.io.outData(InstcntIndex)))//TODO not io.run
+  Instmems.foreach(_.io.raddr:= Mux(io.run,instcntregnext,Instcntreg))//TODO not io.run
   Instmems.zipWithIndex.foreach { case (instMem, i) =>
       instMem.io.waddr := io.waddr - (instMemSize * i).asUInt()
       instMem.io.wen := io.wen && io.waddr >= (instMemStartaddr+instMemSize*i).U && io.waddr < (instMemStartaddr + instMemSize*(i+1)).U
@@ -80,24 +89,24 @@ class PE(inputCount:Int,outputCount:Int) extends Module with CGRAparams{
   Decoder.io.inst := Instmems(0).io.rdata
 
   //Constcnt1reg
-  val constcnt1regnext = Mux(PEctrlregs.io.outData(Constcnt1Index)<7.U,PEctrlregs.io.outData(Constcnt1Index) + 1.U,0.U)//TODO 7U should be constnum1
+  val constcnt1regnext = Mux((Constcnt1reg < Constnum1reg-1.U)&(Constnum1reg > 0.U),Constcnt1reg + 1.U,0.U)
   PEctrlregs.io.inData(Constcnt1Index) := constcnt1regnext
-  PEctrlregs.io.wen(Constcnt1Index):= io.run &(Decoder.io.useconst1)//
+  PEctrlregs.io.wen(Constcnt1Index):= io.run &(Decoder.io.useconst1)//TODO
   //Constcnt2reg
-  val constcnt2regnext = Mux(PEctrlregs.io.outData(Constcnt2Index)<7.U,PEctrlregs.io.outData(Constcnt2Index) + 1.U,0.U)//TODO 7U should be constnum1
+  val constcnt2regnext = Mux((Constcnt2reg < Constnum2reg-1.U)&(Constnum2reg > 0.U),Constcnt2reg + 1.U,0.U)
   PEctrlregs.io.inData(Constcnt2Index) := constcnt2regnext
-  PEctrlregs.io.wen(Constcnt2Index):= io.run &(Decoder.io.useconst2)//
+  PEctrlregs.io.wen(Constcnt2Index):= io.run &(Decoder.io.useconst2)//TODO
   //shiftConstcnt1reg
-  val shiftconstcnt1regnext = Mux(PEctrlregs.io.outData(Shiftconstnum1Index)<7.U,PEctrlregs.io.outData(Shiftconstnum1Index) + 1.U,0.U)//TODO 7U should be constnum1
-  PEctrlregs.io.inData(Shiftconstnum1Index) := shiftconstcnt1regnext
-  PEctrlregs.io.wen(Shiftconstnum1Index):= io.run &(Decoder.io.haveshiftconst1)//
+  val shiftconstcnt1regnext = Mux((Shiftconstcnt1reg < Shiftconstnum1reg - 1.U)&(Shiftconstnum1reg>0.U ),Shiftconstcnt1reg + 1.U,0.U)
+  PEctrlregs.io.inData(Shiftconstcnt1Index) := shiftconstcnt1regnext
+  PEctrlregs.io.wen(Shiftconstcnt1Index):= io.run &(Decoder.io.haveshiftconst1)//TODO
   //shiftConstcnt2reg
-  val shiftconstcnt2regnext = Mux(PEctrlregs.io.outData(Shiftconstnum2Index)<7.U,PEctrlregs.io.outData(Shiftconstnum2Index) + 1.U,0.U)//TODO 7U should be constnum1
-  PEctrlregs.io.inData(Shiftconstnum2Index) := shiftconstcnt2regnext
-  PEctrlregs.io.wen(Shiftconstnum2Index):= io.run &(Decoder.io.haveshiftconst2)//
+  val shiftconstcnt2regnext = Mux((Shiftconstcnt2reg < Shiftconstnum2reg-1.U)&(Shiftconstnum2reg>0.U ),Shiftconstcnt2reg + 1.U,0.U)
+  PEctrlregs.io.inData(Shiftconstcnt2Index) := shiftconstcnt2regnext
+  PEctrlregs.io.wen(Shiftconstcnt2Index):= io.run &(Decoder.io.haveshiftconst2)//
   //Constmems
-  Constmems(0).io.raddr:=Mux(io.run,constcnt1regnext,PEctrlregs.io.outData(Constcnt1Index))//TODO not io.run
-  Constmems(1).io.raddr:=Mux(io.run,constcnt2regnext,PEctrlregs.io.outData(Constcnt2Index))//TODO not iorun.
+  Constmems(0).io.raddr:=Mux(io.run,constcnt1regnext,Constcnt1reg)//TODO not io.run
+  Constmems(1).io.raddr:=Mux(io.run,constcnt2regnext,Constcnt2reg)//TODO not iorun.
   Constmems.zipWithIndex.foreach { case (constMem, i) =>
       constMem.io.waddr := io.waddr - (constMemSize * i).asUInt()
       constMem.io.wen := io.wen && io.waddr >= (constMemStartaddr+constMemSize*i).U && io.waddr < (constMemStartaddr + constMemSize*(i+1)).U
@@ -107,7 +116,8 @@ class PE(inputCount:Int,outputCount:Int) extends Module with CGRAparams{
   io.rdata(7) := Constmems(1).io.rdata
 
   //ShiftConstmems
-  Shiftconstmems.foreach(_.io.raddr:= instcntregnext)//TODO: should not be Instcntreg
+  Shiftconstmems(0).io.raddr:= Mux(io.run,shiftconstcnt1regnext,Shiftconstcnt1reg)//TODO not io.run
+  Shiftconstmems(1).io.raddr:= Mux(io.run,shiftconstcnt2regnext,Shiftconstcnt2reg)//TODO not io.run
   Shiftconstmems.zipWithIndex.foreach { case (shiftconstMem, i) =>
       shiftconstMem.io.waddr := io.waddr - (shiftconstMemSize * i).asUInt()
       shiftconstMem.io.wen := io.wen && io.waddr >= (shiftconstMemStartaddr+shiftconstMemSize*i).U && io.waddr < (shiftconstMemStartaddr + shiftconstMemSize*(i+1)).U
@@ -155,5 +165,4 @@ class PE(inputCount:Int,outputCount:Int) extends Module with CGRAparams{
   io.const2raddr := constcnt2regnext
   io.useconst1:=Decoder.io.useconst1
   io.useconst2:=Decoder.io.useconst2
-  io.const2rdata := Constmems(1).io.rdata
 }

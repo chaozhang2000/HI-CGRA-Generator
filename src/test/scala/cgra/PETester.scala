@@ -11,7 +11,7 @@ import org.scalatest.flatspec.AnyFlatSpec
  * then we read data that has been written to memory,and check if they are the right value
  */
 class PETester extends AnyFlatSpec with ChiselScalatestTester{
-  val inst = "b00000000000000001000000000000100".U
+  val inst = "b00000000000000001000000000000111".U
   "PE test" should "pass" in {
     test(new PE(inputCount = 4,outputCount = 4)){ c =>
         for (i <-0 until 8){
@@ -48,11 +48,41 @@ class PETester extends AnyFlatSpec with ChiselScalatestTester{
         for (i <-64 until 80){
         c.io.run.poke(false.B)
         c.io.wen.poke(true.B)
-        c.io.wdata.poke(0.U)
+        c.io.wdata.poke(i.U)
         c.io.waddr.poke((i).U)
         c.clock.step()
         }
         //ctrlregs
+        //Instnum
+        c.io.run.poke(false.B)
+        c.io.wen.poke(true.B)
+        c.io.wdata.poke(8.U)
+        c.io.waddr.poke((80).U)
+        c.clock.step()
+        //Constnum1
+        c.io.run.poke(false.B)
+        c.io.wen.poke(true.B)
+        c.io.wdata.poke(8.U)
+        c.io.waddr.poke((80+4).U)
+        c.clock.step()
+        //Constnum2
+        c.io.run.poke(false.B)
+        c.io.wen.poke(true.B)
+        c.io.wdata.poke(8.U)
+        c.io.waddr.poke((80+5).U)
+        c.clock.step()
+        //ShiftConstnum1
+        c.io.run.poke(false.B)
+        c.io.wen.poke(true.B)
+        c.io.wdata.poke(8.U)
+        c.io.waddr.poke((80+6).U)
+        c.clock.step()
+        //ShiftConstnum2
+        c.io.run.poke(false.B)
+        c.io.wen.poke(true.B)
+        c.io.wdata.poke(8.U)
+        c.io.waddr.poke((80+7).U)
+        c.clock.step()
         //Instcnt
         c.io.run.poke(false.B)
         c.io.wen.poke(true.B)
@@ -65,11 +95,23 @@ class PETester extends AnyFlatSpec with ChiselScalatestTester{
         c.io.wdata.poke(0.U)
         c.io.waddr.poke((80+19).U)
         c.clock.step()
-        //Constcnt1
+        //Constcnt2
         c.io.run.poke(false.B)
         c.io.wen.poke(true.B)
         c.io.wdata.poke(0.U)
         c.io.waddr.poke((80+20).U)
+        c.clock.step()
+        //Shiftconstcnt1
+        c.io.run.poke(false.B)
+        c.io.wen.poke(true.B)
+        c.io.wdata.poke(0.U)
+        c.io.waddr.poke((80+21).U)
+        c.clock.step()
+        //Shiftconstcnt2
+        c.io.run.poke(false.B)
+        c.io.wen.poke(true.B)
+        c.io.wdata.poke(0.U)
+        c.io.waddr.poke((80+22).U)
         c.clock.step()
         //delay
         c.clock.step()
@@ -79,12 +121,14 @@ class PETester extends AnyFlatSpec with ChiselScalatestTester{
         for (i <-0 until 8){
                 println(s"src1: ${c.io.src1key.peek().litValue()}")
                 println(s"src2: ${c.io.src2key.peek().litValue()}")
+                println(s"shiftc1: ${c.io.rdata(8).peek().litValue()}")
+                println(s"shiftc2: ${c.io.rdata(9).peek().litValue()}")
                 println(s"alu: ${c.io.alukey.peek().litValue()}")
                 println(s"const1addr: ${c.io.const1raddr.peek().litValue()}")
                 println(s"const2addr: ${c.io.const2raddr.peek().litValue()}")
+                println(s"Instcnt: ${c.io.rdata(10).peek().litValue()}")
                 println(s"useconst1: ${c.io.useconst1.peek().litValue()}")
                 println(s"useconst2: ${c.io.useconst2.peek().litValue()}")
-                println(s"const2read: ${c.io.const2rdata.peek().litValue()}")
                 println(s"furegvalue: ${c.io.aluresult.peek().litValue()}")
                 c.clock.step()
         }
