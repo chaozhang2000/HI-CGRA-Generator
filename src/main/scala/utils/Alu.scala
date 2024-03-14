@@ -68,3 +68,40 @@ class Alu (dataWidth:Int,functionNum:Int,opneed:List[String])extends Module {
   })
   io.result := result
 }
+class Aluvalid (dataWidth:Int,functionNum:Int,opneed:List[String])extends Module {
+  val io = IO(new Bundle {
+    val fn = Input(UInt(log2Ceil(functionNum).W))
+    val src1 = Input(Valid(UInt(dataWidth.W)))
+    val src2 = Input(Valid(UInt(dataWidth.W)))
+    val result = Output(Valid(UInt(dataWidth.W)))
+  })
+
+  // Use shorter variable names
+  val fn = io.fn
+  val src1 = io.src1.bits.asSInt
+  val src2 = io.src2.bits.asSInt
+  val result = Wire(SInt(dataWidth.W))
+  val supportedOpcode = AluOpcode()
+  val supportedOperation = AluOperations()
+  
+  //checkthe data
+  opneed.map(op =>{
+    if(supportedOpcode.contains(op) == false){
+      println("some option is not include in AluOpcode")
+    }
+    if(supportedOperation.contains(op) == false){
+      println("some option is not include in AluOperations")
+    }
+  })
+
+  // some default value is needed
+  result := 0.S
+  opneed.map(op => {
+    var opt : (SInt,SInt) => SInt = supportedOperation.get(op).get
+    when (fn === supportedOpcode.getOrElse(op,0.U)){
+      result := opt(src1,src2)
+    }
+  })
+  io.result.bits := result.asUInt
+  io.result.valid := io.src1.valid & io.src2.valid
+}

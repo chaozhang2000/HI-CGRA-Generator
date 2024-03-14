@@ -4,15 +4,15 @@ import chisel3.util._
 
 class PE(inputCount:Int,outputCount:Int) extends Module with CGRAparams{
     val io = IO(new Bundle {
-          //val inLinks = Input(Vec(inputCount,Valid(SInt(dwidth.W))))
-          //val outLinks = Output(Vec(outputCount,Valid(SInt(dwidth.W))))
+          val inLinks = Input(Vec(inputCount,Valid(UInt(dwidth.W))))
+          val outLinks = Output(Vec(outputCount,Valid(UInt(dwidth.W))))
           val run = Input(Bool())
-          val inLinks = Input(Vec(inputCount,UInt(dwidth.W)))
-          val outLinks = Output(Vec(outputCount,UInt(dwidth.W)))
+          //val inLinks = Input(Vec(inputCount,UInt(dwidth.W)))
+          //val outLinks = Output(Vec(outputCount,UInt(dwidth.W)))
           val wen = Input(Bool())
           val waddr= Input(UInt(awidth.W))
           val wdata = Input(UInt(dwidth.W))
-          val rdata = Output(Vec(6+2+2+1,UInt(dwidth.W)))
+          val rdata = Output(Vec(6+2+2+1+2,UInt(dwidth.W)))
 
           val aluresult = Output(UInt(aluwidth.W))
 
@@ -24,9 +24,11 @@ class PE(inputCount:Int,outputCount:Int) extends Module with CGRAparams{
     val const2raddr = Output(UInt(awidth.W))
   val useconst1 = Output(Bool())
   val useconst2 = Output(Bool())
+  val mux1valid= Output(Bool())
+  val mux2valid= Output(Bool())
     })
   val PEctrlregs = Module(new PEctrlregs)
-  val Fureg = Module(new utils.Register(width = aluwidth,resetValue = 0.U))
+  val Fureg = Module(new utils.Regvalid(width = aluwidth,resetValue = 0.U,resetvalid = true.B))
   val Instmems = Seq.tabulate(instmemNum) { i =>
     Module(new utils.Memutil(depth = instMemSize,dwidth = instMemdWidth,awidth = instMemaWidth))
   }
@@ -37,10 +39,10 @@ class PE(inputCount:Int,outputCount:Int) extends Module with CGRAparams{
   val Shiftconstmems = Seq.tabulate(shiftconstmemNum){ i => 
     Module(new utils.Memutil(depth = shiftconstMemSize,dwidth = shiftconstMemdWidth,awidth = shiftconstMemaWidth))
   }
-  val Src1mux = Module(new utils.GenericMux(dWidth =srcmuxWidth ,numOfInputs =srcmuxInputNum))
-  val Src2mux = Module(new utils.GenericMux(dWidth = srcmuxWidth,numOfInputs =srcmuxInputNum))
-  val Alu = Module(new utils.Alu(dataWidth =aluwidth ,functionNum=aluoptnum ,opneed=aluoptlist))
-  val Crossbar = Module(new utils.Crossbar(inputNum =crossbarInputNum,outputNum =crossbarOutputNum,dataWidth =crossbarDataWidth))
+  val Src1mux = Module(new utils.Muxvalid(dWidth =srcmuxWidth ,numOfInputs =srcmuxInputNum))
+  val Src2mux = Module(new utils.Muxvalid(dWidth = srcmuxWidth,numOfInputs =srcmuxInputNum))
+  val Alu = Module(new utils.Aluvalid(dataWidth =aluwidth ,functionNum=aluoptnum ,opneed=aluoptlist))
+  val Crossbar = Module(new utils.Crossbarvalid(inputNum =crossbarInputNum,outputNum =crossbarOutputNum,dataWidth =crossbarDataWidth))
 
   val Instnumreg = PEctrlregs.io.outData(InstnumIndex)
   val IInumreg = PEctrlregs.io.outData(IInumIndex)
@@ -78,9 +80,9 @@ class PE(inputCount:Int,outputCount:Int) extends Module with CGRAparams{
   val shiftconstcnt2regnext = Mux((Shiftconstcnt2reg < Shiftconstnum2reg-1.U)&(Shiftconstnum2reg>0.U ),Shiftconstcnt2reg + 1.U,0.U)
 
   //fureg
-  Fureg.io.inData := Alu.io.result.asUInt
+  Fureg.io.inData := Alu.io.result
   Fureg.io.enable := io.run
-  io.aluresult := Fureg.io.outData
+  io.aluresult := Fureg.io.outData.bits
 
   //PEctrlregs
   PEctrlregs.io.configwen := io.wen
@@ -148,32 +150,37 @@ class PE(inputCount:Int,outputCount:Int) extends Module with CGRAparams{
 
   //src1mux
   Src1mux.io.sel := Decoder.io.src1key
+  Src1mux.io.in.zipWithIndex.foreach{case(in,i)=>in.valid:=true.B}
   Src1mux.io.in(0):= Fureg.io.outData
-  Src1mux.io.in(1):= Constmems(0).io.rdata
+  Src1mux.io.in(1).bits:= Constmems(0).io.rdata
   io.inLinks.zipWithIndex.foreach{case(link,i)=>Src1mux.io.in(i+2):=link}
-  Src1mux.io.in(6):= 0.U //TODO: loop0
-  Src1mux.io.in(7):= 0.U //TODO: loop1
-  Src1mux.io.in(8):= 0.U //TODO: loop2
+  Src1mux.io.in(6).bits:= 0.U //TODO: loop0
+  Src1mux.io.in(7).bits:= 0.U //TODO: loop1
+  Src1mux.io.in(8).bits:= 0.U //TODO: loop2
 
 
   //src2mux
   Src2mux.io.sel := Decoder.io.src2key
+  Src2mux.io.in.zipWithIndex.foreach{case(in,i)=>in.valid:=true.B}
   Src2mux.io.in(0):= Fureg.io.outData
-  Src2mux.io.in(1):= Constmems(1).io.rdata
+  Src2mux.io.in(1).bits:= Constmems(1).io.rdata
   io.inLinks.zipWithIndex.foreach{case(link,i)=>Src2mux.io.in(i+2):=link}
-  Src2mux.io.in(6):= 0.U //TODO: loop0
-  Src2mux.io.in(7):= 0.U //TODO: loop1
-  Src2mux.io.in(8):= 0.U //TODO: loop2
+  Src2mux.io.in(6).bits:= 0.U //TODO: loop0
+  Src2mux.io.in(7).bits:= 0.U //TODO: loop1
+  Src2mux.io.in(8).bits:= 0.U //TODO: loop2
   //FU
   Alu.io.fn := Decoder.io.alukey
-  Alu.io.src1:=Mux(Decoder.io.haveshiftconst1,Src1mux.io.out.asSInt +Shiftconstmems(0).io.rdata.asSInt ,Src1mux.io.out.asSInt)
-  Alu.io.src2:=Mux(Decoder.io.haveshiftconst2,Src2mux.io.out.asSInt +Shiftconstmems(1).io.rdata.asSInt ,Src2mux.io.out.asSInt)
+  Alu.io.src1.bits:=Mux(Decoder.io.haveshiftconst1,(Src1mux.io.out.bits.asSInt +Shiftconstmems(0).io.rdata.asSInt).asUInt,Src1mux.io.out.bits)
+  Alu.io.src2.bits:=Mux(Decoder.io.haveshiftconst2,(Src2mux.io.out.bits.asSInt +Shiftconstmems(1).io.rdata.asSInt).asUInt,Src2mux.io.out.bits)
+  Alu.io.src1.valid:=Src1mux.io.out.valid 
+  Alu.io.src2.valid:=Src2mux.io.out.valid 
   
   //Crossbar
   Crossbar.io.select := Decoder.io.linkkey
-  Crossbar.io.in(0):=0.U
+  Crossbar.io.in(0).bits:=0.U
+  Crossbar.io.in(0).valid:=true.B
   io.inLinks.zipWithIndex.foreach{case(link,i)=>Crossbar.io.in(i+1):=link}
-  Crossbar.io.in(5):=Alu.io.result.asUInt
+  Crossbar.io.in(5):=Alu.io.result
   Crossbar.io.in(6):=Fureg.io.outData
   io.outLinks:=Crossbar.io.out
 
@@ -185,4 +192,9 @@ class PE(inputCount:Int,outputCount:Int) extends Module with CGRAparams{
   io.const2raddr := constcnt2regnext
   io.useconst1:=Decoder.io.useconst1
   io.useconst2:=Decoder.io.useconst2
+  
+  io.rdata(11):= Src1mux.io.out.bits
+  io.rdata(12):= Src2mux.io.out.bits
+  io.mux1valid := Src1mux.io.out.valid
+  io.mux2valid := Src2mux.io.out.valid
 }
