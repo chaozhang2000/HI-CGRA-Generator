@@ -11,29 +11,81 @@ import org.scalatest.flatspec.AnyFlatSpec
  * then we read data that has been written to memory,and check if they are the right value
  */
 class PETester extends AnyFlatSpec with ChiselScalatestTester{
+  val inst = "b00000000000000001000000000000100".U
   "PE test" should "pass" in {
     test(new PE(inputCount = 4,outputCount = 4)){ c =>
-        for (i <-0 until 107){
+        for (i <-0 until 8){
         c.io.run.poke(false.B)
         c.io.wen.poke(true.B)
-        c.io.wdata.poke((i).U)
+        c.io.wdata.poke(inst)
         c.io.waddr.poke((i).U)
         c.clock.step()
         }
+        for (i <-8 until 40){
+        c.io.run.poke(false.B)
+        c.io.wen.poke(true.B)
+        c.io.wdata.poke(0.U)
+        c.io.waddr.poke((i).U)
+        c.clock.step()
+        }
+        //constmem1
+        for (i <-48 until 56){
+        c.io.run.poke(false.B)
+        c.io.wen.poke(true.B)
+        c.io.wdata.poke(0.U)
+        c.io.waddr.poke((i).U)
+        c.clock.step()
+        }
+        //constmem2
+        for (i <-56 until 64){
+        c.io.run.poke(false.B)
+        c.io.wen.poke(true.B)
+        c.io.wdata.poke(i.U)
+        c.io.waddr.poke((i).U)
+        c.clock.step()
+        }
+        //shiftconstmem
+        for (i <-64 until 80){
+        c.io.run.poke(false.B)
+        c.io.wen.poke(true.B)
+        c.io.wdata.poke(0.U)
+        c.io.waddr.poke((i).U)
+        c.clock.step()
+        }
+        //ctrlregs
+        //Instcnt
+        c.io.run.poke(false.B)
+        c.io.wen.poke(true.B)
+        c.io.wdata.poke(0.U)
+        c.io.waddr.poke((80+17).U)
+        c.clock.step()
+        //Constcnt1
+        c.io.run.poke(false.B)
+        c.io.wen.poke(true.B)
+        c.io.wdata.poke(0.U)
+        c.io.waddr.poke((80+19).U)
+        c.clock.step()
+        //Constcnt1
+        c.io.run.poke(false.B)
+        c.io.wen.poke(true.B)
+        c.io.wdata.poke(0.U)
+        c.io.waddr.poke((80+20).U)
+        c.clock.step()
+        //delay
+        c.clock.step()
+
         c.io.wen.poke(false.B)
         c.io.run.poke(true.B)
-        println(s"instcnt: ${c.io.rdata(10).peek().litValue()}")
         for (i <-0 until 8){
-                println(s"rdata(0): ${c.io.rdata(0).peek().litValue()}")
-                println(s"rdata(1): ${c.io.rdata(1).peek().litValue()}")
-                println(s"rdata(2): ${c.io.rdata(2).peek().litValue()}")
-                println(s"rdata(3): ${c.io.rdata(3).peek().litValue()}")
-                println(s"rdata(4): ${c.io.rdata(4).peek().litValue()}")
-                println(s"rdata(5): ${c.io.rdata(5).peek().litValue()}")
-                println(s"rcdata(0): ${c.io.rdata(6).peek().litValue()}")
-                println(s"rcdata(1): ${c.io.rdata(7).peek().litValue()}")
-                println(s"rscdata(0): ${c.io.rdata(8).peek().litValue()}")
-                println(s"rscdata(1): ${c.io.rdata(9).peek().litValue()}")
+                println(s"src1: ${c.io.src1key.peek().litValue()}")
+                println(s"src2: ${c.io.src2key.peek().litValue()}")
+                println(s"alu: ${c.io.alukey.peek().litValue()}")
+                println(s"const1addr: ${c.io.const1raddr.peek().litValue()}")
+                println(s"const2addr: ${c.io.const2raddr.peek().litValue()}")
+                println(s"useconst1: ${c.io.useconst1.peek().litValue()}")
+                println(s"useconst2: ${c.io.useconst2.peek().litValue()}")
+                println(s"const2read: ${c.io.const2rdata.peek().litValue()}")
+                println(s"furegvalue: ${c.io.aluresult.peek().litValue()}")
                 c.clock.step()
         }
     }

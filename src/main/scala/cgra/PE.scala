@@ -15,6 +15,16 @@ class PE(inputCount:Int,outputCount:Int) extends Module with CGRAparams{
           val rdata = Output(Vec(6+2+2+1,UInt(dwidth.W)))
 
           val aluresult = Output(UInt(aluwidth.W))
+
+          //test 
+  val src1key = Output(UInt(log2Ceil(srcmuxInputNum).W))
+  val src2key = Output(UInt(log2Ceil(srcmuxInputNum).W))
+  val alukey= Output(UInt(log2Ceil(aluoptnum).W))
+    val const1raddr = Output(UInt(awidth.W))
+    val const2raddr = Output(UInt(awidth.W))
+  val useconst1 = Output(Bool())
+  val useconst2 = Output(Bool())
+    val const2rdata = Output(UInt(dwidth.W))
     })
   val PEctrlregs = Module(new PEctrlregs)
   val Fureg = Module(new utils.Register(width = aluwidth,resetValue = 0.U))
@@ -53,7 +63,7 @@ class PE(inputCount:Int,outputCount:Int) extends Module with CGRAparams{
   io.rdata(10) := PEctrlregs.io.outData(InstcntIndex)
 
   //Instmems
-  Instmems.foreach(_.io.raddr:= instcntregnext)
+  Instmems.foreach(_.io.raddr:= Mux(io.run,instcntregnext,PEctrlregs.io.outData(InstcntIndex)))//TODO not io.run
   Instmems.zipWithIndex.foreach { case (instMem, i) =>
       instMem.io.waddr := io.waddr - (instMemSize * i).asUInt()
       instMem.io.wen := io.wen && io.waddr >= (instMemStartaddr+instMemSize*i).U && io.waddr < (instMemStartaddr + instMemSize*(i+1)).U
@@ -86,8 +96,8 @@ class PE(inputCount:Int,outputCount:Int) extends Module with CGRAparams{
   PEctrlregs.io.inData(Shiftconstnum2Index) := shiftconstcnt2regnext
   PEctrlregs.io.wen(Shiftconstnum2Index):= io.run &(Decoder.io.haveshiftconst2)//
   //Constmems
-  Constmems(0).io.raddr:=constcnt1regnext
-  Constmems(1).io.raddr:=constcnt2regnext
+  Constmems(0).io.raddr:=Mux(io.run,constcnt1regnext,PEctrlregs.io.outData(Constcnt1Index))//TODO not io.run
+  Constmems(1).io.raddr:=Mux(io.run,constcnt2regnext,PEctrlregs.io.outData(Constcnt2Index))//TODO not iorun.
   Constmems.zipWithIndex.foreach { case (constMem, i) =>
       constMem.io.waddr := io.waddr - (constMemSize * i).asUInt()
       constMem.io.wen := io.wen && io.waddr >= (constMemStartaddr+constMemSize*i).U && io.waddr < (constMemStartaddr + constMemSize*(i+1)).U
@@ -136,4 +146,14 @@ class PE(inputCount:Int,outputCount:Int) extends Module with CGRAparams{
   Crossbar.io.in(5):=Alu.io.result.asUInt
   Crossbar.io.in(6):=Fureg.io.outData
   io.outLinks:=Crossbar.io.out
+
+  //test
+  io.src1key := Decoder.io.src1key
+  io.src2key := Decoder.io.src2key
+  io.alukey := Decoder.io.alukey
+  io.const1raddr := constcnt1regnext
+  io.const2raddr := constcnt2regnext
+  io.useconst1:=Decoder.io.useconst1
+  io.useconst2:=Decoder.io.useconst2
+  io.const2rdata := Constmems(1).io.rdata
 }
