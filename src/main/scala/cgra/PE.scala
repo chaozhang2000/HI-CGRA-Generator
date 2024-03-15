@@ -79,9 +79,10 @@ class PE(inputCount:Int,outputCount:Int) extends Module with CGRAparams{
   val shiftconstcnt1regnext = Mux((Shiftconstcnt1reg < Shiftconstnum1reg - 1.U)&(Shiftconstnum1reg>0.U ),Shiftconstcnt1reg + 1.U,0.U)
   val shiftconstcnt2regnext = Mux((Shiftconstcnt2reg < Shiftconstnum2reg-1.U)&(Shiftconstnum2reg>0.U ),Shiftconstcnt2reg + 1.U,0.U)
 
+  val canupdatestate =Decoder.io.linkkey.map(_ === 0.U).zip(Crossbar.io.out.map(_.valid)).map{case(a,b)=>a|b}.reduce(_ & _) & io.run & Alu.io.result.valid & Finishreg === 0.U //TODO:if Crossbar have less then 4 outputs ?
   //fureg
   Fureg.io.inData := Alu.io.result
-  Fureg.io.enable := io.run
+  Fureg.io.enable := canupdatestate
   io.aluresult := Fureg.io.outData.bits
 
   //PEctrlregs
@@ -93,12 +94,12 @@ class PE(inputCount:Int,outputCount:Int) extends Module with CGRAparams{
   PEctrlregs.io.outData:=DontCare
 
   //Instcntreg
-  PEctrlregs.io.inData(InstcntIndex):=instcntregnext
-  PEctrlregs.io.wen(InstcntIndex):= io.run//TODO not only io.run
+  PEctrlregs.io.inData(InstcntIndex):= instcntregnext
+  PEctrlregs.io.wen(InstcntIndex):= canupdatestate
   io.rdata(10) := Instcntreg
 
   //Instmems
-  Instmems.foreach(_.io.raddr:= Mux(io.run,instcntregnext,Instcntreg))//TODO not io.run
+  Instmems.foreach(_.io.raddr:= Mux(canupdatestate,instcntregnext,Instcntreg))
   Instmems.zipWithIndex.foreach { case (instMem, i) =>
       instMem.io.waddr := io.waddr - (instMemSize * i).asUInt()
       instMem.io.wen := io.wen && io.waddr >= (instMemStartaddr+instMemSize*i).U && io.waddr < (instMemStartaddr + instMemSize*(i+1)).U
@@ -116,19 +117,19 @@ class PE(inputCount:Int,outputCount:Int) extends Module with CGRAparams{
 
   //Constcnt1reg
   PEctrlregs.io.inData(Constcnt1Index) := constcnt1regnext
-  PEctrlregs.io.wen(Constcnt1Index):= io.run &(Decoder.io.useconst1)//TODO
+  PEctrlregs.io.wen(Constcnt1Index):= canupdatestate &(Decoder.io.useconst1)
   //Constcnt2reg
   PEctrlregs.io.inData(Constcnt2Index) := constcnt2regnext
-  PEctrlregs.io.wen(Constcnt2Index):= io.run &(Decoder.io.useconst2)//TODO
+  PEctrlregs.io.wen(Constcnt2Index):= canupdatestate &(Decoder.io.useconst2)
   //shiftConstcnt1reg
   PEctrlregs.io.inData(Shiftconstcnt1Index) := shiftconstcnt1regnext
-  PEctrlregs.io.wen(Shiftconstcnt1Index):= io.run &(Decoder.io.haveshiftconst1)//TODO
+  PEctrlregs.io.wen(Shiftconstcnt1Index):= canupdatestate  &(Decoder.io.haveshiftconst1)
   //shiftConstcnt2reg
   PEctrlregs.io.inData(Shiftconstcnt2Index) := shiftconstcnt2regnext
-  PEctrlregs.io.wen(Shiftconstcnt2Index):= io.run &(Decoder.io.haveshiftconst2)//
+  PEctrlregs.io.wen(Shiftconstcnt2Index):= canupdatestate  &(Decoder.io.haveshiftconst2)//
   //Constmems
-  Constmems(0).io.raddr:=Mux(io.run,constcnt1regnext,Constcnt1reg)//TODO not io.run
-  Constmems(1).io.raddr:=Mux(io.run,constcnt2regnext,Constcnt2reg)//TODO not iorun.
+  Constmems(0).io.raddr:=Mux(canupdatestate,constcnt1regnext,Constcnt1reg)
+  Constmems(1).io.raddr:=Mux(canupdatestate,constcnt2regnext,Constcnt2reg)
   Constmems.zipWithIndex.foreach { case (constMem, i) =>
       constMem.io.waddr := io.waddr - (constMemSize * i).asUInt()
       constMem.io.wen := io.wen && io.waddr >= (constMemStartaddr+constMemSize*i).U && io.waddr < (constMemStartaddr + constMemSize*(i+1)).U
@@ -138,8 +139,8 @@ class PE(inputCount:Int,outputCount:Int) extends Module with CGRAparams{
   io.rdata(7) := Constmems(1).io.rdata
 
   //ShiftConstmems
-  Shiftconstmems(0).io.raddr:= Mux(io.run,shiftconstcnt1regnext,Shiftconstcnt1reg)//TODO not io.run
-  Shiftconstmems(1).io.raddr:= Mux(io.run,shiftconstcnt2regnext,Shiftconstcnt2reg)//TODO not io.run
+  Shiftconstmems(0).io.raddr:= Mux(canupdatestate,shiftconstcnt1regnext,Shiftconstcnt1reg)
+  Shiftconstmems(1).io.raddr:= Mux(canupdatestate,shiftconstcnt2regnext,Shiftconstcnt2reg)
   Shiftconstmems.zipWithIndex.foreach { case (shiftconstMem, i) =>
       shiftconstMem.io.waddr := io.waddr - (shiftconstMemSize * i).asUInt()
       shiftconstMem.io.wen := io.wen && io.waddr >= (shiftconstMemStartaddr+shiftconstMemSize*i).U && io.waddr < (shiftconstMemStartaddr + shiftconstMemSize*(i+1)).U
@@ -154,9 +155,9 @@ class PE(inputCount:Int,outputCount:Int) extends Module with CGRAparams{
   Src1mux.io.in(0):= Fureg.io.outData
   Src1mux.io.in(1).bits:= Constmems(0).io.rdata
   io.inLinks.zipWithIndex.foreach{case(link,i)=>Src1mux.io.in(i+2):=link}
-  Src1mux.io.in(6).bits:= 0.U //TODO: loop0
-  Src1mux.io.in(7).bits:= 0.U //TODO: loop1
-  Src1mux.io.in(8).bits:= 0.U //TODO: loop2
+  Src1mux.io.in(6).bits:= Ireg
+  Src1mux.io.in(7).bits:= Jreg
+  Src1mux.io.in(8).bits:= Kreg
 
 
   //src2mux
@@ -165,9 +166,9 @@ class PE(inputCount:Int,outputCount:Int) extends Module with CGRAparams{
   Src2mux.io.in(0):= Fureg.io.outData
   Src2mux.io.in(1).bits:= Constmems(1).io.rdata
   io.inLinks.zipWithIndex.foreach{case(link,i)=>Src2mux.io.in(i+2):=link}
-  Src2mux.io.in(6).bits:= 0.U //TODO: loop0
-  Src2mux.io.in(7).bits:= 0.U //TODO: loop1
-  Src2mux.io.in(8).bits:= 0.U //TODO: loop2
+  Src2mux.io.in(6).bits:= Ireg //loop0 in
+  Src2mux.io.in(7).bits:= Jreg 
+  Src2mux.io.in(8).bits:= Kreg //loop2 out
   //FU
   Alu.io.fn := Decoder.io.alukey
   Alu.io.src1.bits:=Mux(Decoder.io.haveshiftconst1,(Src1mux.io.out.bits.asSInt +Shiftconstmems(0).io.rdata.asSInt).asUInt,Src1mux.io.out.bits)
@@ -178,11 +179,16 @@ class PE(inputCount:Int,outputCount:Int) extends Module with CGRAparams{
   //Crossbar
   Crossbar.io.select := Decoder.io.linkkey
   Crossbar.io.in(0).bits:=0.U
-  Crossbar.io.in(0).valid:=true.B
+  Crossbar.io.in(0).valid:=false.B
   io.inLinks.zipWithIndex.foreach{case(link,i)=>Crossbar.io.in(i+1):=link}
   Crossbar.io.in(5):=Alu.io.result
   Crossbar.io.in(6):=Fureg.io.outData
-  io.outLinks:=Crossbar.io.out
+  io.outLinks:=Crossbar.io.out.map(signal => {
+    val updateout = Wire(Valid(UInt(crossbarDataWidth.W)))
+    updateout.valid:= signal.valid & canupdatestate
+    updateout.bits:= signal.bits
+    updateout
+  })
 
   //test
   io.src1key := Decoder.io.src1key
