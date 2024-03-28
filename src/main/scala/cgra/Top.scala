@@ -5,9 +5,7 @@ import chisel3.util._
 
 object AddMain extends App with CGRAparams{
   println("Generating the alu hardware")
-  emitVerilog(new utils.Alu(aluwidth,aluoptnum,aluoptlist) , Array("--target-dir", "generated"))
-  println("Generating the aluvalid hardware")
-  emitVerilog(new utils.Aluvalid(aluwidth,aluoptnum,aluoptlist) , Array("--target-dir", "generated"))
+  emitVerilog(new cgra.Fu(aluwidth,aluoptnum,aluoptlist) , Array("--target-dir", "generated"))
 
   println("Generating the Crossbarvalid hardware")
   emitVerilog(new utils.Crossbarvalid(crossbarInputNum,crossbarOutputNum,crossbarDataWidth),Array("--target-dir", "generated"))
@@ -20,6 +18,9 @@ object AddMain extends App with CGRAparams{
 
   println("Generating the SrcMux")
   emitVerilog(new utils.Muxvalid(srcmuxWidth,srcmuxInputNum),Array("--target-dir", "generated"))
+
+  println("Generating the onehot")
+  emitVerilog(new utils.Muxonehot(srcmuxWidth,srcmuxInputNum),Array("--target-dir", "generated"))
 
   println("Generating the Reg")
   emitVerilog(new utils.Register(dwidth,0.U),Array("--target-dir", "generated"))
@@ -36,4 +37,7 @@ object AddMain extends App with CGRAparams{
 
   println("Generating the PE")
   emitVerilog(new cgra.PE(4,4),Array("--target-dir", "generated"))
+
+  println("Generating the pipe")
+  emitVerilog(new utils.PipelineConnectTest,Array("--target-dir", "generated"))
 }

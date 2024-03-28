@@ -4,11 +4,15 @@ trait Commonparams{
   val dwidth = 32
   val awidth = 32
   val pelinkNum = 4
-  val opts = List("nul","add","mul")
+  val opts = List("add","mul","getelementptr","shl")//nul don't need to include
+  val srcnum = 2
   val loopNum = 3
   val instmemNum = pelinkNum + 1 + 1
   val instmemSize = 8
   val instmemStartaddr = 0
+  val instmemindex = 0
+  val fudelayindex = 1
+  val linkdelayindex = 2
   val constmemNum = 2
   val constmemSize = 8
   val constmemStartaddr = instmemStartaddr + instmemNum * instmemSize
@@ -16,7 +20,7 @@ trait Commonparams{
   val shiftconstmemSize = 8
   val shiftconstmemStartaddr = constmemStartaddr + constmemNum * constmemSize
   val datamemSize = 512
-  val pectrlregsNum = 27
+  val pectrlregsNum = 29
   val pectrlregsStartaddr = shiftconstmemStartaddr +shiftconstmemNum * shiftconstmemSize 
 }
 
@@ -29,7 +33,7 @@ trait Crossbarparams extends Commonparams{
 trait Aluparams extends Commonparams{
   val aluoptlist = opts
   val aluwidth = dwidth 
-  val aluoptnum = aluoptlist.size
+  val aluoptnum = aluoptlist.size + 1 //empty opt is not in aluoptlist
 }
 
 trait Srcmuxparams extends Commonparams{
@@ -40,7 +44,7 @@ trait InstMemparams extends Commonparams{
   val instMemdWidth = dwidth
   val instMemaWidth = awidth
   val instMemSize = instmemSize
-  val instMemStartaddr = instmemStartaddr 
+  val instMemStartaddr = instmemStartaddr
 }
 trait ConstMemparams extends Commonparams{
   val constMemdWidth = dwidth
@@ -73,6 +77,7 @@ trait Instparams{
   val Linkkeystartbit = 20
   val Linkkeybits = 3
   
+  val Linkemptycode = 0
   val Srcconstcode = 1
 }
 
@@ -81,34 +86,36 @@ trait PEctrlregsparams extends Commonparams{
   val PEctrlregsaWidth = awidth
   val PEctrlregsdWidth = dwidth
   val PEctrlregsStartaddr = pectrlregsStartaddr 
-	val InstnumIndex = 0;
-	val IInumIndex= 1;
-	val FinishInstcntIndex= 2;
-	val FinishIIcntIndex=3 ;
-	val Constnum1Index= 4;
-	val Constnum2Index= 5;
-	val Shiftconstnum1Index=6 ;
-	val Shiftconstnum2Index=7 ;
-	val I_initIndex= 8;
-	val J_initIndex= 9;
-	val K_initIndex= 10;
-	val I_incIndex= 11;
-	val J_incIndex= 12;
-	val K_incIndex= 13;
-	val I_threadIndex=14 ;
-	val J_threadIndex= 15;
-	val K_threadIndex= 16;
+	val InstnumIndex = 0
+	val IInumIndex= 1
+  val StartcyclenumIndex= 2
+	val FinishInstcntIndex= 3
+	val FinishIIcntIndex=4 
+	val Constnum1Index= 5
+	val Constnum2Index= 6
+	val Shiftconstnum1Index=7
+	val Shiftconstnum2Index=8
+	val I_initIndex= 9
+	val J_initIndex= 10
+	val K_initIndex= 11
+	val I_incIndex= 12
+	val J_incIndex= 13
+	val K_incIndex= 14
+	val I_threadIndex=15
+	val J_threadIndex= 16
+	val K_threadIndex= 17
   
-	val InstcntIndex= 17;
-	val IIcntIndex= 18;
-	val Constcnt1Index= 19;
-	val Constcnt2Index= 20;
-	val Shiftconstcnt1Index= 21;
-	val Shiftconstcnt2Index= 22;
-	val KIndex= 23;
-	val JIndex= 24;
-	val IIndex= 25;
-	val FinishIndex= 26;
+  val StartcyclecntIndex=18
+	val InstcntIndex= 19
+	val IIcntIndex= 20
+	val Constcnt1Index= 21
+	val Constcnt2Index= 22
+	val Shiftconstcnt1Index= 23
+	val Shiftconstcnt2Index= 24
+	val KIndex= 25
+	val JIndex= 26
+	val IIndex= 27
+	val FinishIndex= 28
 }
 
 trait CGRAparams extends Commonparams with Crossbarparams with Aluparams with Srcmuxparams with InstMemparams with ConstMemparams with ShiftconstMemparams with DataMemparams with Instparams with PEctrlregsparams{

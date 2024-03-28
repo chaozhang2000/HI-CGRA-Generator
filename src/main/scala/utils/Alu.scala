@@ -93,7 +93,6 @@ class Aluvalid (dataWidth:Int,functionNum:Int,opneed:List[String])extends Module
       println("some option is not include in AluOperations")
     }
   })
-
   // some default value is needed
   result := 0.S
   opneed.map(op => {

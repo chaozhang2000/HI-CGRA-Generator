@@ -24,3 +24,12 @@ class Muxvalid(dWidth: Int, numOfInputs: Int) extends Module {
   io.out := MuxLookup(io.sel,defaultValue, 
     (0 until numOfInputs).map(i => i.U -> io.in(i))) // 使用 MuxLookup 构建 Mux 逻辑
 }
+
+class Muxonehot(dWidth:Int,numOfInputs:Int) extends Module{
+  val io = IO(new Bundle {
+    val in = Input(Vec(numOfInputs, UInt(dWidth.W))) // 输入
+    val sel = Input(UInt(numOfInputs.W)) // 选择信号
+    val out = Output(UInt(dWidth.W)) // 输出
+  })
+  io.out := PriorityMux(io.in.zipWithIndex.map { case (input, idx) => (io.sel(idx) === 1.U) -> input })
+}
