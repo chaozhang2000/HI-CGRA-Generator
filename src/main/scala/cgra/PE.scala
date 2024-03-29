@@ -13,6 +13,8 @@ class PE(inputCount:Int,outputCount:Int) extends Module with CGRAparams{
           val wen = Input(Bool())
           val waddr= Input(UInt(awidth.W))
           val wdata = Input(UInt(dwidth.W))
+
+          val datamemio = Flipped(new DataMemIO)
     })
   val PEctrlregs = Module(new PEctrlregs)
   val Fureg = Module(new utils.Register(width = aluwidth,resetValue = 0.U))
@@ -27,7 +29,7 @@ class PE(inputCount:Int,outputCount:Int) extends Module with CGRAparams{
     Module(new utils.Memutil(depth = shiftconstMemSize,dwidth = shiftconstMemdWidth,awidth = shiftconstMemaWidth))
   }
   val Srcmuxs = Seq.tabulate(srcnum){i =>Module(new utils.GenericMux(dWidth =srcmuxWidth ,numOfInputs =srcmuxInputNum))}
-  val Alu = Module(new Fu(dataWidth =aluwidth ,functionNum=aluoptnum ,opneed=aluoptlist))
+  val Alu = Module(new Fu)
   val Crossbar = Module(new utils.Crossbar(inputNum =crossbarInputNum,outputNum =crossbarOutputNum,dataWidth =crossbarDataWidth))
 
   var regs = Map.empty[Int,UInt]
@@ -151,4 +153,7 @@ class PE(inputCount:Int,outputCount:Int) extends Module with CGRAparams{
     updateout:= signal
     updateout
   })
+
+  //datamem
+  io.datamemio <> Alu.io.datamemio
 }

@@ -28,8 +28,8 @@ class Muxvalid(dWidth: Int, numOfInputs: Int) extends Module {
 class Muxonehot(dWidth:Int,numOfInputs:Int) extends Module{
   val io = IO(new Bundle {
     val in = Input(Vec(numOfInputs, UInt(dWidth.W))) // 输入
-    val sel = Input(UInt(numOfInputs.W)) // 选择信号
+    val sel = Input(Vec(numOfInputs,Bool())) // 选择信号
     val out = Output(UInt(dWidth.W)) // 输出
   })
-  io.out := PriorityMux(io.in.zipWithIndex.map { case (input, idx) => (io.sel(idx) === 1.U) -> input })
+  io.out := PriorityMux(io.in.zipWithIndex.map { case (input, idx) => (io.sel(idx) === true.B) -> input })
 }

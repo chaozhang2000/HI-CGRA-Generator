@@ -5,7 +5,7 @@ import chisel3.util._
 
 object AddMain extends App with CGRAparams{
   println("Generating the alu hardware")
-  emitVerilog(new cgra.Fu(aluwidth,aluoptnum,aluoptlist) , Array("--target-dir", "generated"))
+  emitVerilog(new cgra.Fu(), Array("--target-dir", "generated"))
 
   println("Generating the Crossbarvalid hardware")
   emitVerilog(new utils.Crossbarvalid(crossbarInputNum,crossbarOutputNum,crossbarDataWidth),Array("--target-dir", "generated"))
@@ -34,6 +34,12 @@ object AddMain extends App with CGRAparams{
 
   println("Generating the PEctrlregs")
   emitVerilog(new cgra.PEctrlregs(),Array("--target-dir", "generated"))
+
+  println("Generating the Datamem")
+  emitVerilog(new cgra.Datamem(),Array("--target-dir", "generated"))
+
+  println("Generating the CGRA")
+  emitVerilog(new cgra.CGRA(),Array("--target-dir", "generated"))
 
   println("Generating the PE")
   emitVerilog(new cgra.PE(4,4),Array("--target-dir", "generated"))

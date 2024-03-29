@@ -4,7 +4,7 @@ trait Commonparams{
   val dwidth = 32
   val awidth = 32
   val pelinkNum = 4
-  val opts = List("add","mul","getelementptr","shl")//nul don't need to include
+  val opts = List("nul","add","mul","getelementptr","shl","load","store")
   val srcnum = 2
   val loopNum = 3
   val instmemNum = pelinkNum + 1 + 1
@@ -33,7 +33,7 @@ trait Crossbarparams extends Commonparams{
 trait Aluparams extends Commonparams{
   val aluoptlist = opts
   val aluwidth = dwidth 
-  val aluoptnum = aluoptlist.size + 1 //empty opt is not in aluoptlist
+  val aluoptnum = aluoptlist.size 
 }
 
 trait Srcmuxparams extends Commonparams{
@@ -59,7 +59,8 @@ trait ShiftconstMemparams extends Commonparams{
   val shiftconstMemStartaddr = shiftconstmemStartaddr
 }
 trait DataMemparams extends Commonparams{
-  val dataMemWidth = dwidth
+  val dataMemdWidth = dwidth
+  val dataMemaWidth = awidth
   val dataMemSize = datamemSize
 }
 
