@@ -3,16 +3,15 @@ import chisel3._
 import chisel3.util._
 import scala.collection.mutable.Map
 
-//TODO startcyclecnt update
-//TODO valid signal
-class PE(inputCount:Int,outputCount:Int) extends Module with CGRAparams{
+class PE extends Module with CGRAparams{
     val io = IO(new Bundle {
-          val inLinks = Input(Vec(inputCount,UInt(dwidth.W)))
-          val outLinks = Output(Vec(outputCount,UInt(dwidth.W)))
+          val inLinks = Input(Vec(pelinkNum,UInt(dwidth.W)))
+          val outLinks = Output(Vec(pelinkNum,Valid(UInt(dwidth.W))))
           val run = Input(Bool())
           val wen = Input(Bool())
           val waddr= Input(UInt(awidth.W))
           val wdata = Input(UInt(dwidth.W))
+          val finish = Output(Bool())
 
           val datamemio = Flipped(new DataMemIO)
     })
@@ -63,7 +62,8 @@ class PE(inputCount:Int,outputCount:Int) extends Module with CGRAparams{
   val Iinit = Loopnuminit(IIndex,I_incIndex,I_threadIndex)
   val Inew = Mux(Iinit,regs(I_initIndex),regs(IIndex) + regs(I_incIndex))
   ctrlregnextmap +=(IIndex->Inew)
-  val canupdatestate =Decoder.io.canexe //TODO:if Crossbar have less then 4 outputs ?
+  ctrlregnextmap +=(StartcyclecntIndex -> Mux(regs(StartcyclecntIndex) < regs(StartcyclenumIndex), regs(StartcyclecntIndex) + 1.U,regs(StartcyclecntIndex)))
+  val canupdatestate =Decoder.io.canexe & io.run //TODO:if Crossbar have less then 4 outputs ?
   ctrlregwenmap +=(InstcntIndex->canupdatestate)
   ctrlregwenmap +=(Constcnt1Index->(canupdatestate&Decoder.io.useconst(0)))
   ctrlregwenmap +=(Constcnt2Index->(canupdatestate&Decoder.io.useconst(1)))
@@ -74,6 +74,7 @@ class PE(inputCount:Int,outputCount:Int) extends Module with CGRAparams{
   ctrlregwenmap +=(KIndex->(canupdatestate&Kchange))
   ctrlregwenmap +=(JIndex->(canupdatestate&Jchange))
   ctrlregwenmap +=(IIndex->(canupdatestate&Ichange))
+  ctrlregwenmap +=(StartcyclecntIndex->io.run)
 
   //fureg
   Fureg.io.inData := Alu.io.result.bits
@@ -148,12 +149,20 @@ class PE(inputCount:Int,outputCount:Int) extends Module with CGRAparams{
   io.inLinks.zipWithIndex.foreach{case(link,i)=>Crossbar.io.in(i+1):=link}
   Crossbar.io.in(5):=Alu.io.result.bits
   Crossbar.io.in(6):=Fureg.io.outData
+
+  io.outLinks.zipWithIndex.foreach{case(link,i) =>
+    link.bits := Crossbar.io.out(i)
+    link.valid := canupdatestate & Decoder.io.linkneedtosendout(i) & (!Decoder.io.linkinstskip(i))
+  }
+      /*
   io.outLinks:=Crossbar.io.out.map(signal => {
     val updateout = Wire(UInt(crossbarDataWidth.W))
     updateout:= signal
     updateout
   })
 
+  */
   //datamem
   io.datamemio <> Alu.io.datamemio
+  io.finish := regs(FinishIndex) === 1.U
 }

@@ -42,7 +42,10 @@ object AddMain extends App with CGRAparams{
   emitVerilog(new cgra.CGRA(),Array("--target-dir", "generated"))
 
   println("Generating the PE")
-  emitVerilog(new cgra.PE(4,4),Array("--target-dir", "generated"))
+  emitVerilog(new cgra.PE(),Array("--target-dir", "generated"))
+
+  println("Generating the Link")
+  emitVerilog(new cgra.Link(),Array("--target-dir", "generated"))
 
   println("Generating the pipe")
   emitVerilog(new utils.PipelineConnectTest,Array("--target-dir", "generated"))
