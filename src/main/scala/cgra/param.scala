@@ -1,6 +1,8 @@
 package cgra
 
 trait Commonparams{
+  val cgrarows = 4
+  val cgracols = 4
   val dwidth = 32
   val awidth = 32
   val pelinkNum = 4
