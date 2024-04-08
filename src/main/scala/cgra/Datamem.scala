@@ -14,12 +14,7 @@ class DataMemIO extends Bundle with CGRAparams{
 class Datamem extends Module with CGRAparams{
   val io = IO(new DataMemIO)
   val mem = Module(new utils.Memutil(depth=dataMemSize,dwidth=dataMemdWidth,awidth=dataMemaWidth))
-    val wen   = Input(Bool())
-    val waddr= Input(UInt(awidth.W))
-    val wdata = Input(UInt(dwidth.W))
-    val raddr = Input(UInt(awidth.W))
-    val rdata = Output(UInt(dwidth.W))
-  mem.io.wen:= io.wen
+  mem.io.wen := io.wen
   mem.io.waddr := io.waddr
   mem.io.wdata := io.wdata
   mem.io.raddr := io.raddr

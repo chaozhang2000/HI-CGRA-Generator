@@ -32,27 +32,26 @@ class CGRA extends Module with CGRAparams{
     for( r <- 0 until cgrarows){
       for ( c <- 0 until cgracols){
         if(r < cgrarows -1){//to N
-          Links(linkid).io.in := PEs(r*cgracols + c).io.outLinks(0);
-          PEs((r+1)*cgracols+c).io.inLinks(1) := Links(linkid).io.out;
+          Links(linkid).io.in := PEs(r*cgracols + c).io.outLinks(0)
+          PEs((r+1)*cgracols+c).io.inLinks(1) := Links(linkid).io.out
           linkid += 1
         }
         if(r > 0){//to S
-          Links(linkid).io.in := PEs(r*cgracols + c).io.outLinks(1);
-          PEs((r-1)*cgracols+c).io.inLinks(0) := Links(linkid).io.out;
+          Links(linkid).io.in := PEs(r*cgracols + c).io.outLinks(1)
+          PEs((r-1)*cgracols+c).io.inLinks(0) := Links(linkid).io.out
           linkid += 1
         }
         if(c < cgracols -1){//to E
-          Links(linkid).io.in := PEs(r*cgracols + c).io.outLinks(3);
-          PEs(r*cgracols+c+1).io.inLinks(2) := Links(linkid).io.out;
+          Links(linkid).io.in := PEs(r*cgracols + c).io.outLinks(3)
+          PEs(r*cgracols+c+1).io.inLinks(2) := Links(linkid).io.out
           linkid += 1
         }
         if(c > 0){//to W
-          Links(linkid).io.in := PEs(r*cgracols + c).io.outLinks(2);
-          PEs(r*cgracols+c-1).io.inLinks(3) := Links(linkid).io.out;
+          Links(linkid).io.in := PEs(r*cgracols + c).io.outLinks(2)
+          PEs(r*cgracols+c-1).io.inLinks(3) := Links(linkid).io.out
           linkid += 1
         }
       }
     }
-
     io.finish := PEs.map(_.io.finish).reduce(_ && _)
 }

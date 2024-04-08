@@ -49,4 +49,7 @@ object AddMain extends App with CGRAparams{
 
   println("Generating the pipe")
   emitVerilog(new utils.PipelineConnectTest,Array("--target-dir", "generated"))
+
+  println("Generating the AXI-Lite")
+  emitVerilog(new utils.AXI4LiteModule(),Array("--target-dir", "generated"))
 }
