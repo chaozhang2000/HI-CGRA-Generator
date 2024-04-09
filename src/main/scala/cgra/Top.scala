@@ -52,4 +52,6 @@ object AddMain extends App with CGRAparams{
 
   println("Generating the AXI-Lite")
   emitVerilog(new utils.AXI4LiteModule(),Array("--target-dir", "generated"))
+  println("Generating the AXI-Stream")
+  emitVerilog(new utils.AXI4StreamModule(32),Array("--target-dir", "generated"))
 }

@@ -2,8 +2,7 @@
 package utils 
 import chisel3._
 import chisel3.util._
-class AXI4LiteModule(REG_COUNT: Int = 16) extends Module {
-  val io = IO(new Bundle {
+class AXI4LiteSlaveIO extends Bundle{ 
     val araddr = Flipped(Decoupled(UInt(32.W)))
     val rdata =Decoupled(UInt(32.W))
     val rresp = Output(UInt(2.W))
@@ -11,11 +10,11 @@ class AXI4LiteModule(REG_COUNT: Int = 16) extends Module {
     val awaddr = Flipped(Decoupled(UInt(32.W)))
     val wdata = Flipped(Decoupled(UInt(32.W)))
     val wstrb = Input(UInt(4.W))
-
     val bresp = Decoupled(UInt(2.W))
+}
 
-    val test = Output(UInt(32.W))
-  })
+class AXI4LiteModule(REG_COUNT: Int = 16) extends Module {
+  val io = IO(new AXI4LiteSlaveIO)
 
   val registers = Reg(Vec(REG_COUNT, UInt(32.W)))
 
@@ -71,6 +70,5 @@ class AXI4LiteModule(REG_COUNT: Int = 16) extends Module {
   io.rdata.bits := Mux((stater === 1.U)&&io.rdata.valid && io.rdata.ready,registers(currentAddressr),0.U)
 
   io.rresp := 0.U
-  io.test:=registers(currentAddressr)
 }
 

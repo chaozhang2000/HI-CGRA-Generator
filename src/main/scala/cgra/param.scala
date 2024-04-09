@@ -5,6 +5,10 @@ trait Commonparams{
   val cgracols = 4
   val dwidth = 32
   val awidth = 32
+  val cgractrlregsnum = 8
+  val cgrastartaddr = 0
+
+  //PE
   val pelinkNum = 4
   val opts = List("nul","add","mul","getelementptr","shl","load","store")
   val srcnum = 2
@@ -121,6 +125,14 @@ trait PEctrlregsparams extends Commonparams{
 	val FinishIndex= 28
 }
 
-trait CGRAparams extends Commonparams with Crossbarparams with Aluparams with Srcmuxparams with InstMemparams with ConstMemparams with ShiftconstMemparams with DataMemparams with Instparams with PEctrlregsparams{
+trait CGRActrlregsparams extends Commonparams{
+  val CGRActrlregsNum = cgractrlregsnum 
+  val CGRActrlregsaWidth = awidth
+  val CGRActrlregsdWidth = dwidth
+
+  val CGRAstateIndex = 0
+}
+
+trait CGRAparams extends Commonparams with Crossbarparams with Aluparams with Srcmuxparams with InstMemparams with ConstMemparams with ShiftconstMemparams with DataMemparams with Instparams with PEctrlregsparams with CGRActrlregsparams {
 
 }
