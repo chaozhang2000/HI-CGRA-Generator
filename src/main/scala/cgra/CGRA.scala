@@ -1,28 +1,36 @@
 package cgra
 import chisel3._
 import chisel3.util._
+import scala.collection.mutable.Map
 
 class CGRA extends Module with CGRAparams{
     val io = IO(new Bundle {
-          val wen = Input(Bool())
-          val waddr= Input(UInt(awidth.W))
-          val wdata = Input(UInt(dwidth.W))
           val run = Input(Bool())
           val finish = Output(Bool())
 
           val axilite_s = new utils.AXI4LiteSlaveIO 
+          val axistream_s = new utils.AXI4StreamSlaveIO
     })
     val PEs = Array.fill(cgrarows * cgracols)(Module(new PE))
     val Links = Array.fill(2 *cgrarows*(cgracols-1) + 2*cgracols * (cgrarows -1))(Module(new Link))
     val Datamem= Array.fill(cgrarows*cgracols)(Module(new Datamem))
-    val ctrlregs = Reg(Vec(CGRActrlregsNum, UInt(CGRActrlregsdWidth.W)))
+
+    val ctrlregs = RegInit(VecInit(Seq.fill(CGRActrlregsNum)(0.U(CGRActrlregsdWidth.W))))
+    var ctrlregnextmap = Map.empty[Int,UInt]
+    var ctrlregwenmap = Map.empty[Int,Bool]
+
+    val configwaddr = RegInit(0.U(dwidth.W))
+    val configPEcnt = RegInit(0.U(dwidth.W))
+    val configwdata = Wire(UInt(dwidth.W))
+    val configwen = Wire(Bool())
+    configwdata := 0.U;configwen:=false.B
 
     // init PEs io.inLinks
     for( i<-0 until cgrarows * cgracols ) {
       (0 until pelinkNum ).foreach { linkindex => PEs(i).io.inLinks(linkindex):= 0.U}
-          PEs(i).io.wen := io.wen
-          PEs(i).io.waddr:=io.waddr
-          PEs(i).io.wdata:=io.wdata
+          PEs(i).io.wen := configwen &&(configPEcnt === i.U)
+          PEs(i).io.waddr:=configwaddr
+          PEs(i).io.wdata:=configwdata
           PEs(i).io.run := io.run
     }
     //connect datamem
@@ -55,7 +63,10 @@ class CGRA extends Module with CGRAparams{
         }
       }
     }
-    io.finish := PEs.map(_.io.finish).reduce(_ && _)
+    val cgrafinish = Wire(Bool())
+    cgrafinish := PEs.map(_.io.finish).reduce(_ && _)
+
+    io.finish:= ctrlregs(CGRAfinishIndex)
   //--------------------------------------------AXI-Lite-----------------------------------------------
 
   val statew = RegInit(0.U(2.W))
@@ -86,7 +97,6 @@ class CGRA extends Module with CGRAparams{
       when(io.axilite_s.wdata.valid&& io.axilite_s.wdata.ready) {
         ctrlregs_axil_wen := true.B
         ctrlregs_axil_wdata :=(ctrlregs(currentAddressw) & (~mask)) |(io.axilite_s.wdata.bits &mask)
-        //ctrlregs(currentAddressw) := (ctrlregs(currentAddressw) & (~mask)) |(io.axilite_s.wdata.bits &mask)
         statew := 2.U
       }
     }
@@ -118,9 +128,49 @@ class CGRA extends Module with CGRAparams{
 
   io.axilite_s.rresp := 0.U
 
-  when(ctrlregs_axil_wen){
-    ctrlregs(currentAddressw) := ctrlregs_axil_wdata
-  }
   //--------------------------------------------state machine----------------------------------------------------
+  val config_finish = Wire(Bool())
+  config_finish := false.B
 
+  val state = Map(
+    "idle" -> 0.U,
+    "config" -> 1.U
+  )
+  val statenext = Wire(UInt(CGRActrlregsdWidth.W))
+  statenext :=ctrlregs(CGRAstateIndex)
+
+  when(ctrlregs(CGRAstateIndex) === state("config") && config_finish === true.B){
+    statenext := 0.U
+  }
+  //config state
+  val configPEnext = Wire(UInt(dwidth.W))
+  val configwaddrnext = Wire(UInt(dwidth.W))
+  configwaddrnext := Mux((configwaddr< peendaddr.U),configwaddr+ 1.U,0.U)
+  configPEnext := Mux(configPEcnt <(cgrarows * cgracols -1).U,configPEcnt +1.U,0.U)
+  config_finish := (configwaddrnext === peendaddr.U ) &&(configPEcnt === (cgrarows * cgracols -1).U)
+  io.axistream_s.ready:= state("config") === ctrlregs(CGRAstateIndex)
+  when(ctrlregs(CGRAstateIndex) === state("config") && io.axistream_s.valid && io.axistream_s.ready){
+    configwdata := io.axistream_s.data
+    configwen := true.B
+    configwaddr := Mux(config_finish,0.U,configwaddrnext)
+    configPEcnt := Mux(config_finish,0.U,configPEnext)
+  }
+  
+  //regs update
+    ctrlregnextmap +=(CGRAfinishIndex -> cgrafinish)//TODO
+    ctrlregwenmap +=(CGRAfinishIndex -> cgrafinish)
+
+  (0 until CGRActrlregsNum).foreach {i =>
+    if(ctrlregnextmap.contains(i) && ctrlregwenmap.contains(i)){
+      when(ctrlregs_axil_wen){
+        ctrlregs(currentAddressw) := ctrlregs_axil_wdata
+      }.elsewhen(ctrlregwenmap(i) === true.B){
+        ctrlregs(i) := ctrlregnextmap(i)
+      }
+    }else{
+      when(ctrlregs_axil_wen){
+        ctrlregs(currentAddressw) := ctrlregs_axil_wdata
+      }
+    }
+  }
 }
