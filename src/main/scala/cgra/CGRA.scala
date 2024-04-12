@@ -25,6 +25,12 @@ class CGRA extends Module with CGRAparams{
     val configwen = Wire(Bool())
     configwdata := 0.U;configwen:=false.B
 
+    val state = Map(
+      "idle" -> 0.U,
+      "config" -> 1.U,
+      "loaddata" -> 2.U
+    )
+
     // init PEs io.inLinks
     for( i<-0 until cgrarows * cgracols ) {
       (0 until pelinkNum ).foreach { linkindex => PEs(i).io.inLinks(linkindex):= 0.U}
@@ -34,7 +40,12 @@ class CGRA extends Module with CGRAparams{
           PEs(i).io.run := io.run
     }
     //connect datamem
-    (0 until cgrarows*cgracols).foreach {i => PEs(i).io.datamemio <> Datamem(i).io}
+    (0 until cgrarows*cgracols).foreach {i => 
+      PEs(i).io.datamemio <> Datamem(i).io
+      Datamem(i).io.wen := Mux((ctrlregs(CGRAstateIndex) === state("loaddata"))&&io.axistream_s.valid && io.axistream_s.ready,ctrlregs(CGRAdatamemIndex)===i.U,PEs(i).io.datamemio.wen)
+      Datamem(i).io.waddr :=Mux((ctrlregs(CGRAstateIndex) === state("loaddata")),ctrlregs(CGRAdatamemstartaddrIndex) + ctrlregs(CGRAdatamemaddaddrIndex),PEs(i).io.datamemio.waddr)
+      Datamem(i).io.wdata :=Mux((ctrlregs(CGRAstateIndex) === state("loaddata")),io.axistream_s.data,PEs(i).io.datamemio.wdata)
+    }
 
 
     //connect pes and links
@@ -132,10 +143,6 @@ class CGRA extends Module with CGRAparams{
   val config_finish = Wire(Bool())
   config_finish := false.B
 
-  val state = Map(
-    "idle" -> 0.U,
-    "config" -> 1.U
-  )
   val statenext = Wire(UInt(CGRActrlregsdWidth.W))
   statenext :=ctrlregs(CGRAstateIndex)
 
@@ -147,18 +154,28 @@ class CGRA extends Module with CGRAparams{
   val configwaddrnext = Wire(UInt(dwidth.W))
   configwaddrnext := Mux((configwaddr< peendaddr.U),configwaddr+ 1.U,0.U)
   configPEnext := Mux(configPEcnt <(cgrarows * cgracols -1).U,configPEcnt +1.U,0.U)
-  config_finish := (configwaddrnext === peendaddr.U ) &&(configPEcnt === (cgrarows * cgracols -1).U)
-  io.axistream_s.ready:= state("config") === ctrlregs(CGRAstateIndex)
+  config_finish := (configwaddr === peendaddr.U ) &&(configPEcnt === (cgrarows * cgracols -1).U)
+  io.axistream_s.ready:= state("config") === ctrlregs(CGRAstateIndex) | state("loaddata") === ctrlregs(CGRAstateIndex)
   when(ctrlregs(CGRAstateIndex) === state("config") && io.axistream_s.valid && io.axistream_s.ready){
     configwdata := io.axistream_s.data
     configwen := true.B
     configwaddr := Mux(config_finish,0.U,configwaddrnext)
-    configPEcnt := Mux(config_finish,0.U,configPEnext)
+    when(configwaddr === peendaddr.U){
+      configPEcnt := Mux(config_finish,0.U,configPEnext)
+    }
   }
+
+  //loaddata state
   
   //regs update
     ctrlregnextmap +=(CGRAfinishIndex -> cgrafinish)//TODO
     ctrlregwenmap +=(CGRAfinishIndex -> cgrafinish)
+
+    ctrlregnextmap += (CGRAstateIndex -> statenext)
+    ctrlregwenmap +=(CGRAstateIndex -> config_finish)//TODO
+    
+    ctrlregnextmap += (CGRAdatamemaddaddrIndex-> (ctrlregs(CGRAdatamemaddaddrIndex) + 1.U))
+    ctrlregwenmap +=(CGRAdatamemaddaddrIndex->((ctrlregs(CGRAstateIndex) === state("loaddata"))&&io.axistream_s.valid && io.axistream_s.ready))
 
   (0 until CGRActrlregsNum).foreach {i =>
     if(ctrlregnextmap.contains(i) && ctrlregwenmap.contains(i)){
