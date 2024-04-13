@@ -5,7 +5,6 @@ import scala.collection.mutable.Map
 
 class CGRA extends Module with CGRAparams{
     val io = IO(new Bundle {
-          val run = Input(Bool())
           val finish = Output(Bool())
 
           val axilite_s = new utils.AXI4LiteSlaveIO 
@@ -40,7 +39,7 @@ class CGRA extends Module with CGRAparams{
           PEs(i).io.wen := configwen &&(configPEcnt === i.U)
           PEs(i).io.waddr:=configwaddr
           PEs(i).io.wdata:=configwdata
-          PEs(i).io.run := io.run
+          PEs(i).io.run := ctrlregs(CGRAstateIndex) === state("exe")
     }
     //connect datamem
     (0 until cgrarows*cgracols).foreach {i => 
@@ -152,7 +151,7 @@ class CGRA extends Module with CGRAparams{
   val statenext = Wire(UInt(CGRActrlregsdWidth.W))
   statenext :=ctrlregs(CGRAstateIndex)
 
-  when(ctrlregs(CGRAstateIndex) === state("config") && config_finish === true.B){
+  when((ctrlregs(CGRAstateIndex) === state("config") && config_finish === true.B)|(ctrlregs(CGRAstateIndex) === state("exe") && cgrafinish === true.B)){
     statenext := 0.U
   }
   //config state
