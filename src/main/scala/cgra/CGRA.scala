@@ -10,6 +10,7 @@ class CGRA extends Module with CGRAparams{
 
           val axilite_s = new utils.AXI4LiteSlaveIO 
           val axistream_s = new utils.AXI4StreamSlaveIO
+          val axistream_m = Flipped(new utils.AXI4StreamSlaveIO)
     })
     val PEs = Array.fill(cgrarows * cgracols)(Module(new PE))
     val Links = Array.fill(2 *cgrarows*(cgracols-1) + 2*cgracols * (cgrarows -1))(Module(new Link))
@@ -28,7 +29,9 @@ class CGRA extends Module with CGRAparams{
     val state = Map(
       "idle" -> 0.U,
       "config" -> 1.U,
-      "loaddata" -> 2.U
+      "loaddata" -> 2.U,
+      "exe" -> 3.U,
+      "getresult" -> 4.U
     )
 
     // init PEs io.inLinks
@@ -45,6 +48,9 @@ class CGRA extends Module with CGRAparams{
       Datamem(i).io.wen := Mux((ctrlregs(CGRAstateIndex) === state("loaddata"))&&io.axistream_s.valid && io.axistream_s.ready,ctrlregs(CGRAdatamemIndex)===i.U,PEs(i).io.datamemio.wen)
       Datamem(i).io.waddr :=Mux((ctrlregs(CGRAstateIndex) === state("loaddata")),ctrlregs(CGRAdatamemstartaddrIndex) + ctrlregs(CGRAdatamemaddaddrIndex),PEs(i).io.datamemio.waddr)
       Datamem(i).io.wdata :=Mux((ctrlregs(CGRAstateIndex) === state("loaddata")),io.axistream_s.data,PEs(i).io.datamemio.wdata)
+
+      Datamem(i).io.raddr := Mux(ctrlregs(CGRAstateIndex) === state("getresult"),ctrlregs(CGRAdatamemstartaddrIndex) + ctrlregs(CGRAdatamemaddaddrIndex) + Mux(io.axistream_m.valid && io.axistream_m.ready,1.U,0.U),PEs(i).io.datamemio.raddr)
+      Datamem(i).io.ren := Mux(ctrlregs(CGRAstateIndex) === state("getresult"),true.B,PEs(i).io.datamemio.ren)
     }
 
 
@@ -166,7 +172,10 @@ class CGRA extends Module with CGRAparams{
   }
 
   //loaddata state
-  
+  //getresult state
+  io.axistream_m.valid := (ctrlregs(CGRAstateIndex) === state("getresult")) && (ctrlregs(CGRAdatamemaddaddrIndex) < ctrlregs(CGRAdatamemreadlengthIndex)) &&(VecInit(Datamem.map(mem=>mem.io.memoptvalid)).apply(ctrlregs(CGRAdatamemIndex)))
+  io.axistream_m.data := VecInit(Datamem.map(mem=>mem.io.rdata)).apply(ctrlregs(CGRAdatamemIndex))
+  io.axistream_m.last := (ctrlregs(CGRAstateIndex) === state("getresult")) && (ctrlregs(CGRAdatamemaddaddrIndex) === ctrlregs(CGRAdatamemreadlengthIndex) - 1.U)
   //regs update
     ctrlregnextmap +=(CGRAfinishIndex -> cgrafinish)//TODO
     ctrlregwenmap +=(CGRAfinishIndex -> cgrafinish)
@@ -175,7 +184,7 @@ class CGRA extends Module with CGRAparams{
     ctrlregwenmap +=(CGRAstateIndex -> config_finish)//TODO
     
     ctrlregnextmap += (CGRAdatamemaddaddrIndex-> (ctrlregs(CGRAdatamemaddaddrIndex) + 1.U))
-    ctrlregwenmap +=(CGRAdatamemaddaddrIndex->((ctrlregs(CGRAstateIndex) === state("loaddata"))&&io.axistream_s.valid && io.axistream_s.ready))
+    ctrlregwenmap +=(CGRAdatamemaddaddrIndex->(((ctrlregs(CGRAstateIndex) === state("loaddata"))&&io.axistream_s.valid && io.axistream_s.ready)|((ctrlregs(CGRAstateIndex) === state("getresult")&&io.axistream_m.valid && io.axistream_m.ready)&&(ctrlregs(CGRAdatamemaddaddrIndex) < ctrlregs(CGRAdatamemreadlengthIndex)))))
 
   (0 until CGRActrlregsNum).foreach {i =>
     if(ctrlregnextmap.contains(i) && ctrlregwenmap.contains(i)){

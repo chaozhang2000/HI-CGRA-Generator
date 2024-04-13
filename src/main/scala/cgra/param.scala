@@ -5,7 +5,7 @@ trait Commonparams{
   val cgracols = 3
   val dwidth = 32
   val awidth = 32
-  val cgractrlregsnum = 5
+  val cgractrlregsnum = 6
   val cgrastartaddr = 0
 
   //PE
@@ -136,6 +136,7 @@ trait CGRActrlregsparams extends Commonparams{
   val CGRAdatamemIndex = 2
   val CGRAdatamemstartaddrIndex = 3
   val CGRAdatamemaddaddrIndex = 4
+  val CGRAdatamemreadlengthIndex = 5
 }
 
 trait CGRAparams extends Commonparams with Crossbarparams with Aluparams with Srcmuxparams with InstMemparams with ConstMemparams with ShiftconstMemparams with DataMemparams with Instparams with PEctrlregsparams with CGRActrlregsparams {
