@@ -92,7 +92,7 @@ class PE extends Module with CGRAparams{
   //Instmems
   Instmems.foreach(_.io.raddr:= Mux(canupdatestate,ctrlregnextmap(InstcntIndex),regs(InstcntIndex)))
   Instmems.zipWithIndex.foreach { case (instMem, i) =>
-      instMem.io.waddr := io.waddr - (instMemSize * i).asUInt()
+      instMem.io.waddr := io.waddr - (instMemSize * i + instMemStartaddr).asUInt()
       instMem.io.wen := io.wen && io.waddr >= (instMemStartaddr+instMemSize*i).U && io.waddr < (instMemStartaddr + instMemSize*(i+1)).U
       instMem.io.wdata := io.wdata
   }
@@ -115,7 +115,7 @@ class PE extends Module with CGRAparams{
   Constmems(0).io.raddr:=Mux(canupdatestate,ctrlregnextmap(Constcnt1Index),regs(Constcnt1Index))
   Constmems(1).io.raddr:=Mux(canupdatestate,ctrlregnextmap(Constcnt2Index),regs(Constcnt2Index))
   Constmems.zipWithIndex.foreach { case (constMem, i) =>
-      constMem.io.waddr := io.waddr - (constMemSize * i).asUInt()
+      constMem.io.waddr := io.waddr - (constMemSize * i + constMemStartaddr).asUInt()
       constMem.io.wen := io.wen && io.waddr >= (constMemStartaddr+constMemSize*i).U && io.waddr < (constMemStartaddr + constMemSize*(i+1)).U
       constMem.io.wdata := io.wdata
   }
@@ -124,7 +124,7 @@ class PE extends Module with CGRAparams{
   Shiftconstmems(0).io.raddr:= Mux(canupdatestate,ctrlregnextmap(Shiftconstcnt1Index),regs(Shiftconstcnt1Index))
   Shiftconstmems(1).io.raddr:= Mux(canupdatestate,ctrlregnextmap(Shiftconstcnt2Index),regs(Shiftconstcnt2Index))
   Shiftconstmems.zipWithIndex.foreach { case (shiftconstMem, i) =>
-      shiftconstMem.io.waddr := io.waddr - (shiftconstMemSize * i).asUInt()
+      shiftconstMem.io.waddr := io.waddr - (shiftconstMemSize * i + shiftconstMemStartaddr).asUInt()
       shiftconstMem.io.wen := io.wen && io.waddr >= (shiftconstMemStartaddr+shiftconstMemSize*i).U && io.waddr < (shiftconstMemStartaddr + shiftconstMemSize*(i+1)).U
       shiftconstMem.io.wdata := io.wdata
   }

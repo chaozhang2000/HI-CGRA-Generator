@@ -14,14 +14,14 @@ trait Commonparams{
   val srcnum = 2
   val loopNum = 3
   val instmemNum = pelinkNum + 1 + 1
-  val instmemSize = 8
+  val instmemSize = 10
   val instmemStartaddr = 0
   val instmemindex = 0
   val fudelayindex = 1
   val linkdelayindex = 2
   val constmemNum = 2
   val constmemSize = 8
-  val constmemStartaddr = instmemStartaddr + instmemNum * instmemSize
+  val constmemStartaddr = instmemStartaddr + instmemNum * instmemSize //60
   val shiftconstmemNum = 2
   val shiftconstmemSize = 8
   val shiftconstmemStartaddr = constmemStartaddr + constmemNum * constmemSize
