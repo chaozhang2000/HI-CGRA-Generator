@@ -176,11 +176,11 @@ class CGRA extends Module with CGRAparams{
   io.axistream_m.data := VecInit(Datamem.map(mem=>mem.io.rdata)).apply(ctrlregs(CGRAdatamemIndex))
   io.axistream_m.last := (ctrlregs(CGRAstateIndex) === state("getresult")) && (ctrlregs(CGRAdatamemaddaddrIndex) === ctrlregs(CGRAdatamemreadlengthIndex) - 1.U)
   //regs update
-    ctrlregnextmap +=(CGRAfinishIndex -> cgrafinish)//TODO
+    ctrlregnextmap +=(CGRAfinishIndex -> cgrafinish)
     ctrlregwenmap +=(CGRAfinishIndex -> cgrafinish)
 
     ctrlregnextmap += (CGRAstateIndex -> statenext)
-    ctrlregwenmap +=(CGRAstateIndex -> config_finish)//TODO
+    ctrlregwenmap +=(CGRAstateIndex -> (config_finish | cgrafinish))
     
     ctrlregnextmap += (CGRAdatamemaddaddrIndex-> (ctrlregs(CGRAdatamemaddaddrIndex) + 1.U))
     ctrlregwenmap +=(CGRAdatamemaddaddrIndex->(((ctrlregs(CGRAstateIndex) === state("loaddata"))&&io.axistream_s.valid && io.axistream_s.ready)|((ctrlregs(CGRAstateIndex) === state("getresult")&&io.axistream_m.valid && io.axistream_m.ready)&&(ctrlregs(CGRAdatamemaddaddrIndex) < ctrlregs(CGRAdatamemreadlengthIndex)))))

@@ -63,7 +63,7 @@ class PE extends Module with CGRAparams{
   val Inew = Mux(Iinit,regs(I_initIndex),regs(IIndex) + regs(I_incIndex))
   ctrlregnextmap +=(IIndex->Inew)
   ctrlregnextmap +=(StartcyclecntIndex -> Mux(regs(StartcyclecntIndex) < regs(StartcyclenumIndex), regs(StartcyclecntIndex) + 1.U,regs(StartcyclecntIndex)))
-  val canupdatestate =Decoder.io.canexe & io.run //TODO:if Crossbar have less then 4 outputs ?
+  val canupdatestate =Decoder.io.canexe & io.run & (!io.finish)//TODO:if Crossbar have less then 4 outputs ?
   ctrlregwenmap +=(InstcntIndex->canupdatestate)
   ctrlregwenmap +=(Constcnt1Index->(canupdatestate&Decoder.io.useconst(0)))
   ctrlregwenmap +=(Constcnt2Index->(canupdatestate&Decoder.io.useconst(1)))
