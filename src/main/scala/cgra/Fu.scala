@@ -17,11 +17,9 @@ object AluOpcode {
     )
 }
 object AluOperations{
-  val nul: (SInt,SInt) => SInt = {(src1,src2) => 0.S}
   val add: (SInt,SInt) => SInt = {(src1,src2) => src1+src2}
   val mul: (SInt,SInt) => SInt = {(src1,src2) => src1*src2}
   def apply() = Map(
-    "nul" -> nul,
     "mul" -> mul,
     "add" -> add,
     "getelementptr" -> add
@@ -72,6 +70,13 @@ class Fu extends Module with CGRAparams{
     }
     }
   })
+  //shl
+  if(aluoptlist.contains("nul")){
+    when (fn === supportedOpcode("nul")){
+      opresultmap("nul") := 0.U
+      opresultvalidmap("nul") := false.B
+    }
+  }
   //shl
   if(aluoptlist.contains("shl")){
     when (fn === supportedOpcode("shl")){

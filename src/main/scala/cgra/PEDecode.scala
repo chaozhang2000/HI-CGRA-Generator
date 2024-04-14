@@ -31,7 +31,7 @@ class PEDecode extends Module with CGRAparams{
     var linkkeyistartbit = Linkkeystartbit+i*Linkkeybits
     var linkkey = io.inst(instmemindex)(linkkeyistartbit +log2Ceil(crossbarInputNum)-1,linkkeyistartbit)
     io.linkkey(i) := linkkey
-    io.linkneedtosendout(i) := (linkkey != Linkemptycode.U).asBool
+    io.linkneedtosendout(i) := (linkkey =/= Linkemptycode.U)
   }
 
   io.useconst(0):= io.inst(instmemindex)(Src1keystartbit+log2Ceil(srcmuxInputNum)-1,Src1keystartbit) === Srcconstcode.U 

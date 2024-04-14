@@ -1,8 +1,8 @@
 package cgra
 
 trait Commonparams{
-  val cgrarows = 3
-  val cgracols = 3
+  val cgrarows = 4
+  val cgracols = 4
   val dwidth = 32
   val awidth = 32
   val cgractrlregsnum = 6
@@ -45,7 +45,7 @@ trait Aluparams extends Commonparams{
 
 trait Srcmuxparams extends Commonparams{
   val srcmuxWidth = dwidth
-  val srcmuxInputNum = pelinkNum + loopNum + 1 + 1;//1 fureg,1 constMem
+  val srcmuxInputNum = pelinkNum + loopNum + 1 + 1 + 1;//1 fureg,1 constMem,1 zero
 }
 trait InstMemparams extends Commonparams{
   val instMemdWidth = dwidth
@@ -86,7 +86,7 @@ trait Instparams{
   val Linkkeybits = 3
   
   val Linkemptycode = 0
-  val Srcconstcode = 1
+  val Srcconstcode = 2
 }
 
 trait PEctrlregsparams extends Commonparams{

@@ -112,8 +112,8 @@ class PE extends Module with CGRAparams{
   }
 
   //Constmems
-  Constmems(0).io.raddr:=Mux(canupdatestate,ctrlregnextmap(Constcnt1Index),regs(Constcnt1Index))
-  Constmems(1).io.raddr:=Mux(canupdatestate,ctrlregnextmap(Constcnt2Index),regs(Constcnt2Index))
+  Constmems(0).io.raddr:=Mux(canupdatestate&Decoder.io.useconst(0),ctrlregnextmap(Constcnt1Index),regs(Constcnt1Index))
+  Constmems(1).io.raddr:=Mux(canupdatestate&Decoder.io.useconst(1),ctrlregnextmap(Constcnt2Index),regs(Constcnt2Index))
   Constmems.zipWithIndex.foreach { case (constMem, i) =>
       constMem.io.waddr := io.waddr - (constMemSize * i + constMemStartaddr).asUInt()
       constMem.io.wen := io.wen && io.waddr >= (constMemStartaddr+constMemSize*i).U && io.waddr < (constMemStartaddr + constMemSize*(i+1)).U
@@ -121,8 +121,8 @@ class PE extends Module with CGRAparams{
   }
 
   //ShiftConstmems
-  Shiftconstmems(0).io.raddr:= Mux(canupdatestate,ctrlregnextmap(Shiftconstcnt1Index),regs(Shiftconstcnt1Index))
-  Shiftconstmems(1).io.raddr:= Mux(canupdatestate,ctrlregnextmap(Shiftconstcnt2Index),regs(Shiftconstcnt2Index))
+  Shiftconstmems(0).io.raddr:= Mux(canupdatestate&Decoder.io.haveshiftconst(0),ctrlregnextmap(Shiftconstcnt1Index),regs(Shiftconstcnt1Index))
+  Shiftconstmems(1).io.raddr:= Mux(canupdatestate&Decoder.io.haveshiftconst(1),ctrlregnextmap(Shiftconstcnt2Index),regs(Shiftconstcnt2Index))
   Shiftconstmems.zipWithIndex.foreach { case (shiftconstMem, i) =>
       shiftconstMem.io.waddr := io.waddr - (shiftconstMemSize * i + shiftconstMemStartaddr).asUInt()
       shiftconstMem.io.wen := io.wen && io.waddr >= (shiftconstMemStartaddr+shiftconstMemSize*i).U && io.waddr < (shiftconstMemStartaddr + shiftconstMemSize*(i+1)).U
@@ -131,12 +131,13 @@ class PE extends Module with CGRAparams{
 
   Srcmuxs.zipWithIndex.foreach {case(srcmux,i) => 
     srcmux.io.sel := Decoder.io.srckey(i)
-    srcmux.io.in(0):= Fureg.io.outData
-    srcmux.io.in(1):= Constmems(0).io.rdata
-    io.inLinks.zipWithIndex.foreach{case(link,i)=>srcmux.io.in(i+2):=link}
-    srcmux.io.in(6):= regs(IIndex)
-    srcmux.io.in(7):= regs(JIndex)
-    srcmux.io.in(8):= regs(KIndex)
+    srcmux.io.in(0):= 0.U
+    srcmux.io.in(1):= Fureg.io.outData
+    srcmux.io.in(2):= Constmems(i).io.rdata
+    io.inLinks.zipWithIndex.foreach{case(link,j)=>srcmux.io.in(j+3):=link}
+    srcmux.io.in(7):= regs(KIndex)
+    srcmux.io.in(8):= regs(JIndex)
+    srcmux.io.in(9):= regs(IIndex)
   }
   //FU
   Alu.io.fn := Decoder.io.alukey
