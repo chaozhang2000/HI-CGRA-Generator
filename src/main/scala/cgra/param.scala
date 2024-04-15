@@ -7,7 +7,14 @@ trait Commonparams{
   val awidth = 32
   val cgractrlregsnum = 6
   val cgrastartaddr = 0
-
+  val datamemNum = 4 
+  val datamemSize = 512
+  val datamemaccess = Map(
+    0 -> Array(0,1,2,3),
+    1 -> Array(4,5,6,7),
+    2 -> Array(8,9,10,11),
+    3 -> Array(12,13,14,15)
+    )
   //PE
   val pelinkNum = 4
   val opts = List("nul","add","mul","getelementptr","shl","load","store")
@@ -25,10 +32,10 @@ trait Commonparams{
   val shiftconstmemNum = 2
   val shiftconstmemSize = 8
   val shiftconstmemStartaddr = constmemStartaddr + constmemNum * constmemSize
-  val datamemSize = 512
   val pectrlregsNum = 29
   val pectrlregsStartaddr = shiftconstmemStartaddr +shiftconstmemNum * shiftconstmemSize 
   val peendaddr = pectrlregsStartaddr + pectrlregsNum -1
+
 }
 
 trait Crossbarparams extends Commonparams{

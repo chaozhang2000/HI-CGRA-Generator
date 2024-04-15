@@ -11,9 +11,10 @@ class CGRA extends Module with CGRAparams{
           val axistream_s = new utils.AXI4StreamSlaveIO
           val axistream_m = Flipped(new utils.AXI4StreamSlaveIO)
     })
-    val PEs = Array.fill(cgrarows * cgracols)(Module(new PE))
+    //val PEs = Array.fill(cgrarows * cgracols)(Module(new PE(_)))
+    val PEs = Array.tabulate(cgrarows * cgracols)(i => Module(new PE(i)))
     val Links = Array.fill(2 *cgrarows*(cgracols-1) + 2*cgracols * (cgrarows -1))(Module(new Link))
-    val Datamem= Array.fill(cgrarows*cgracols)(Module(new Datamem))
+    val Datamem= Array.fill(datamemNum)(Module(new Datamem))
 
     val ctrlregs = RegInit(VecInit(Seq.fill(CGRActrlregsNum)(0.U(CGRActrlregsdWidth.W))))
     var ctrlregnextmap = Map.empty[Int,UInt]
@@ -42,7 +43,9 @@ class CGRA extends Module with CGRAparams{
           PEs(i).io.run := ctrlregs(CGRAstateIndex) === state("exe")
     }
     //connect datamem
-    (0 until cgrarows*cgracols).foreach {i => 
+    (0 until cgrarows*cgracols).foreach {i => PEs(i).io.datamemio.memoptvalid := 0.U;PEs(i).io.datamemio.rdata := 0.U;PEs(i).io.datamemio.peidfm := 0.U}
+    /*
+    (0 until datamemNum).foreach {i => 
       PEs(i).io.datamemio <> Datamem(i).io
       Datamem(i).io.wen := Mux((ctrlregs(CGRAstateIndex) === state("loaddata"))&&io.axistream_s.valid && io.axistream_s.ready,ctrlregs(CGRAdatamemIndex)===i.U,PEs(i).io.datamemio.wen)
       Datamem(i).io.waddr :=Mux((ctrlregs(CGRAstateIndex) === state("loaddata")),ctrlregs(CGRAdatamemstartaddrIndex) + ctrlregs(CGRAdatamemaddaddrIndex),PEs(i).io.datamemio.waddr)
@@ -50,6 +53,37 @@ class CGRA extends Module with CGRAparams{
 
       Datamem(i).io.raddr := Mux(ctrlregs(CGRAstateIndex) === state("getresult"),ctrlregs(CGRAdatamemstartaddrIndex) + ctrlregs(CGRAdatamemaddaddrIndex) + Mux(io.axistream_m.valid && io.axistream_m.ready,1.U,0.U),PEs(i).io.datamemio.raddr)
       Datamem(i).io.ren := Mux(ctrlregs(CGRAstateIndex) === state("getresult"),true.B,PEs(i).io.datamemio.ren)
+    }
+    */
+    (0 until datamemNum).foreach {i => 
+      datamemaccess(i).foreach{ peid =>
+        PEs(peid).io.datamemio.rdata := Datamem(i).io.rdata
+        PEs(peid).io.datamemio.peidfm := Datamem(i).io.peidfm
+        PEs(peid).io.datamemio.memoptvalid := Datamem(i).io.memoptvalid
+      }
+      
+      val memwen = Wire(Bool())
+      memwen := datamemaccess(i).map{peid => PEs(peid).io.datamemio.wen}.reduce(_ | _)
+      val memren = Wire(Bool())
+      memren := datamemaccess(i).map{peid => PEs(peid).io.datamemio.ren}.reduce(_ | _)
+      val memwaddr = Wire(UInt(dataMemaWidth.W))
+      memwaddr := PriorityMux(datamemaccess(i).map{peid => (PEs(peid).io.datamemio.wen -> PEs(peid).io.datamemio.waddr)})
+      val memwdata = Wire(UInt(dataMemdWidth.W))
+      memwdata := PriorityMux(datamemaccess(i).map{peid => (PEs(peid).io.datamemio.wen -> PEs(peid).io.datamemio.wdata)})
+      val memraddr = Wire(UInt(dataMemaWidth.W))
+      memraddr := PriorityMux(datamemaccess(i).map{peid => (PEs(peid).io.datamemio.ren -> PEs(peid).io.datamemio.raddr)})
+      val peid2m= Wire(UInt(log2Ceil(cgrarows*cgracols).W))
+      peid2m := PriorityMux(datamemaccess(i).map{peid => (PEs(peid).io.datamemio.ren|PEs(peid).io.datamemio.wen) -> PEs(peid).io.datamemio.peid2m})
+      Datamem(i).io.wen := Mux((ctrlregs(CGRAstateIndex) === state("loaddata"))&&io.axistream_s.valid && io.axistream_s.ready,ctrlregs(CGRAdatamemIndex)===i.U,memwen)
+      Datamem(i).io.waddr :=Mux((ctrlregs(CGRAstateIndex) === state("loaddata")),ctrlregs(CGRAdatamemstartaddrIndex) + ctrlregs(CGRAdatamemaddaddrIndex),memwaddr)
+      Datamem(i).io.wdata :=Mux((ctrlregs(CGRAstateIndex) === state("loaddata")),io.axistream_s.data,memwdata)
+
+      Datamem(i).io.raddr := Mux(ctrlregs(CGRAstateIndex) === state("getresult"),ctrlregs(CGRAdatamemstartaddrIndex) + ctrlregs(CGRAdatamemaddaddrIndex) + Mux(io.axistream_m.valid && io.axistream_m.ready,1.U,0.U),memraddr)
+      Datamem(i).io.ren := Mux(ctrlregs(CGRAstateIndex) === state("getresult"),true.B,memren)
+
+      Datamem(i).io.ren := Mux(ctrlregs(CGRAstateIndex) === state("getresult"),true.B,memren)
+
+      Datamem(i).io.peid2m := peid2m
     }
 
 

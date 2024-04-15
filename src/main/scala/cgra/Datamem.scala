@@ -8,6 +8,8 @@ class DataMemIO extends Bundle with CGRAparams{
   val ren = Input(Bool())
   val raddr = Input(UInt(dataMemaWidth.W))
   val rdata = Output(UInt(dataMemdWidth.W))
+  val peid2m = Input(UInt(log2Ceil(cgrarows*cgracols).W))
+  val peidfm = Output(UInt(log2Ceil(cgrarows*cgracols).W))
   val memoptvalid = Output(Bool())
 }
 
@@ -20,4 +22,5 @@ class Datamem extends Module with CGRAparams{
   mem.io.raddr := io.raddr
   io.rdata := mem.io.rdata
   io.memoptvalid := RegNext(io.ren) | RegNext(io.wen)
+  io.peidfm := RegNext(io.peid2m)
 }

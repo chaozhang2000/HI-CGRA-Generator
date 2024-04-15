@@ -25,7 +25,7 @@ object AluOperations{
     "getelementptr" -> add
     )
 }
-class Fu extends Module with CGRAparams{
+class Fu (ID:Int) extends Module with CGRAparams{
   val io = IO(new Bundle {
     val fn = Input(UInt(log2Ceil(aluoptnum).W))
     val src1 = Input(UInt(aluwidth.W))
@@ -91,7 +91,7 @@ class Fu extends Module with CGRAparams{
       io.datamemio.ren := true.B
     }
       opresultmap("load") := io.datamemio.rdata
-      opresultvalidmap("load") := io.datamemio.memoptvalid
+      opresultvalidmap("load") := io.datamemio.memoptvalid && (io.datamemio.peidfm === ID.U)
   }
   //store
   if(aluoptlist.contains("store")){
@@ -100,10 +100,12 @@ class Fu extends Module with CGRAparams{
       io.datamemio.wdata:= io.src1
       io.datamemio.wen := true.B
     }
-      opresultvalidmap("store") := io.datamemio.memoptvalid
+      opresultvalidmap("store") := io.datamemio.memoptvalid && (io.datamemio.peidfm === ID.U)
   }
   outmux.io.sel := result_valid
   outmux.io.in := result
   io.result.bits := outmux.io.out
   io.result.valid := result_valid.reduce(_|_)
+
+  io.datamemio.peid2m := ID.U
 }

@@ -3,7 +3,7 @@ import chisel3._
 import chisel3.util._
 import scala.collection.mutable.Map
 
-class PE extends Module with CGRAparams{
+class PE (ID:Int)extends Module with CGRAparams{
     val io = IO(new Bundle {
           val inLinks = Input(Vec(pelinkNum,UInt(dwidth.W)))
           val outLinks = Output(Vec(pelinkNum,Valid(UInt(dwidth.W))))
@@ -28,7 +28,7 @@ class PE extends Module with CGRAparams{
     Module(new utils.Memutil(depth = shiftconstMemSize,dwidth = shiftconstMemdWidth,awidth = shiftconstMemaWidth))
   }
   val Srcmuxs = Seq.tabulate(srcnum){i =>Module(new utils.GenericMux(dWidth =srcmuxWidth ,numOfInputs =srcmuxInputNum))}
-  val Alu = Module(new Fu)
+  val Alu = Module(new Fu(ID))
   val Crossbar = Module(new utils.Crossbar(inputNum =crossbarInputNum,outputNum =crossbarOutputNum,dataWidth =crossbarDataWidth))
 
   var regs = Map.empty[Int,UInt]
