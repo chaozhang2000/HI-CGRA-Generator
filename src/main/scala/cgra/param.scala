@@ -6,7 +6,7 @@ trait Commonparams{
   val dwidth = 32
   val awidth = 32
   val cgractrlregsnum = 6
-  val cgrastartaddr = 0
+  val cgrastartaddr = 0xA0010000L
   val datamemNum = 4 
   val datamemSize = 512
   val datamemaccess = Map(

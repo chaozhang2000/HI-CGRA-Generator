@@ -132,8 +132,8 @@ class CGRA extends Module with CGRAparams{
   io.axilite_s.bresp.valid := false.B
   io.axilite_s.bresp.bits := 0.U
 
-  io.axilite_s.awaddr.ready := statew === 0.U
-  io.axilite_s.wdata.ready := statew ===1.U
+  io.axilite_s.awaddr.ready := (statew === 0.U) 
+  io.axilite_s.wdata.ready := (statew ===1.U)
 
   val mask = Cat(Fill(8, io.axilite_s.wstrb(3)), Fill(8, io.axilite_s.wstrb(2)), Fill(8, io.axilite_s.wstrb(1)), Fill(8, io.axilite_s.wstrb(0)))
   switch(statew) {
@@ -159,7 +159,7 @@ class CGRA extends Module with CGRAparams{
     }
   }
 
-  io.axilite_s.araddr.ready := stater ===0.U
+  io.axilite_s.araddr.ready := (stater ===0.U)
   io.axilite_s.rdata.valid:= stater === 1.U
   switch(stater) {
     is(0.U) {
