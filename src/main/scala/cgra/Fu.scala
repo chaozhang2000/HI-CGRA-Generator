@@ -13,16 +13,29 @@ object AluOpcode {
     "getelementptr" -> 3.U,
     "load" -> 4.U,
     "store" -> 5.U,
-    "shl" -> 6.U
+    "shl" -> 6.U,
+    "or"  -> 7.U,
+    "sext" -> 8.U,
+    "and" -> 9.U,
+    "sub" -> 10.U,
+    "ashr" -> 11.U
     )
 }
 object AluOperations{
   val add: (SInt,SInt) => SInt = {(src1,src2) => src1+src2}
   val mul: (SInt,SInt) => SInt = {(src1,src2) => src1*src2}
+  val or: (SInt,SInt) => SInt = {(src1,src2) => src1|src2}
+  val sext: (SInt,SInt) => SInt = {(src1,src2) => src1}
+  val and: (SInt,SInt) => SInt = {(src1,src2) => src1&src2}
+  val sub: (SInt,SInt) => SInt = {(src1,src2) => src1-src2}
   def apply() = Map(
     "mul" -> mul,
     "add" -> add,
-    "getelementptr" -> add
+    "getelementptr" -> add,
+    "or"  -> or,
+    "sext" -> sext,
+    "and" -> and,
+    "sub" -> sub
     )
 }
 class Fu (ID:Int) extends Module with CGRAparams{
@@ -70,7 +83,7 @@ class Fu (ID:Int) extends Module with CGRAparams{
     }
     }
   })
-  //shl
+  //nul
   if(aluoptlist.contains("nul")){
     when (fn === supportedOpcode("nul")){
       opresultmap("nul") := 0.U
@@ -82,6 +95,13 @@ class Fu (ID:Int) extends Module with CGRAparams{
     when (fn === supportedOpcode("shl")){
       opresultmap("shl") := (src1 << src2(4,0)).asUInt
       opresultvalidmap("shl") := true.B
+    }
+  }
+  //ashr
+  if(aluoptlist.contains("ashr")){
+    when (fn === supportedOpcode("ashr")){
+      opresultmap("ashr") := (src1.asSInt() >> src2(4,0)).asUInt
+      opresultvalidmap("ashr") := true.B
     }
   }
   //load

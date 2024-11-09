@@ -47,19 +47,19 @@ class PE (ID:Int)extends Module with CGRAparams{
   ctrlregnextmap +=(IIcntIndex -> Mux(regs(InstcntIndex) ===regs(InstnumIndex)-1.U,regs(IIcntIndex)+ 1.U,regs(IIcntIndex)))
   ctrlregnextmap +=(FinishIndex -> ((regs(IIcntIndex) === regs(FinishIIcntIndex)) & (regs(InstcntIndex)=== regs(FinishInstcntIndex))).asUInt)
 
-  def Loopnuminit(cntID:Int,incID:Int,threadID:Int): Bool = {
-    Mux(regs(incID).asSInt>0.S,regs(cntID).asSInt + regs(incID).asSInt >= regs(threadID).asSInt,regs(cntID).asSInt + regs(incID).asSInt <= regs(threadID).asSInt) 
+  def Loopnuminit(cntID:Int,incID:Int,threadID:Int,change:Bool): Bool = {
+    Mux(regs(incID).asSInt>0.S,regs(cntID).asSInt + regs(incID).asSInt >= regs(threadID).asSInt,regs(cntID).asSInt + regs(incID).asSInt <= regs(threadID).asSInt)&change 
   }
   val Kchange = regs(InstcntIndex) === regs(InstnumIndex) -1.U
-  val Kinit = Loopnuminit(KIndex,K_incIndex,K_threadIndex)
+  val Kinit = Loopnuminit(KIndex,K_incIndex,K_threadIndex,Kchange)
   val Knew = Mux(Kinit,regs(K_initIndex),regs(KIndex) + regs(K_incIndex))
   ctrlregnextmap +=(KIndex->Knew)
   val Jchange = Kinit
-  val Jinit = Loopnuminit(JIndex,J_incIndex,J_threadIndex)
+  val Jinit = Loopnuminit(JIndex,J_incIndex,J_threadIndex,Jchange)
   val Jnew = Mux(Jinit,regs(J_initIndex),regs(JIndex) + regs(J_incIndex))
   ctrlregnextmap +=(JIndex->Jnew)
   val Ichange = Jinit
-  val Iinit = Loopnuminit(IIndex,I_incIndex,I_threadIndex)
+  val Iinit = Loopnuminit(IIndex,I_incIndex,I_threadIndex,Ichange)
   val Inew = Mux(Iinit,regs(I_initIndex),regs(IIndex) + regs(I_incIndex))
   ctrlregnextmap +=(IIndex->Inew)
   ctrlregnextmap +=(StartcyclecntIndex -> Mux(regs(StartcyclecntIndex) < regs(StartcyclenumIndex), regs(StartcyclecntIndex) + 1.U,regs(StartcyclecntIndex)))

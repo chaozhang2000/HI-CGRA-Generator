@@ -17,7 +17,7 @@ trait Commonparams{
     )
   //PE
   val pelinkNum = 4
-  val opts = List("nul","add","mul","getelementptr","shl","load","store")
+  val opts = List("nul","add","mul","getelementptr","shl","load","store","or","sext","sub","and","ashr")
   val srcnum = 2
   val loopNum = 3
   val instmemNum = pelinkNum + 1 + 1
