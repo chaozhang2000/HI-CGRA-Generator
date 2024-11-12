@@ -165,5 +165,8 @@ class PE (ID:Int)extends Module with CGRAparams{
   */
   //datamem
   io.datamemio <> Alu.io.datamemio
+  io.datamemio.ren := Alu.io.datamemio.ren & canupdatestate & (!Decoder.io.fuinstskip)
+  io.datamemio.wen := Alu.io.datamemio.wen & canupdatestate & (!Decoder.io.fuinstskip)
+
   io.finish := regs(FinishIndex) === 1.U
 }
