@@ -34,14 +34,6 @@ class CGRA extends Module with CGRAparams{
       "getresult" -> 4.U
     )
 
-    // init PEs io.inLinks
-    for( i<-0 until cgrarows * cgracols ) {
-      (0 until pelinkNum ).foreach { linkindex => PEs(i).io.inLinks(linkindex):= 0.U}
-          PEs(i).io.wen := configwen &&(configPEcnt === i.U)
-          PEs(i).io.waddr:=configwaddr
-          PEs(i).io.wdata:=configwdata
-          PEs(i).io.run := ctrlregs(CGRAstateIndex) === state("exe")
-    }
     //connect datamem
     (0 until cgrarows*cgracols).foreach {i => PEs(i).io.datamemio.memoptvalid := 0.U;PEs(i).io.datamemio.rdata := 0.U;PEs(i).io.datamemio.peidfm := 0.U}
     /*
@@ -195,13 +187,29 @@ class CGRA extends Module with CGRAparams{
   configPEnext := Mux(configPEcnt <(cgrarows * cgracols -1).U,configPEcnt +1.U,0.U)
   config_finish := (configwaddr === peendaddr.U ) &&(configPEcnt === (cgrarows * cgracols -1).U)
   io.axistream_s.ready:= state("config") === ctrlregs(CGRAstateIndex) | state("loaddata") === ctrlregs(CGRAstateIndex)
-  when(ctrlregs(CGRAstateIndex) === state("config") && io.axistream_s.valid && io.axistream_s.ready){
+
+  val configallpe = Wire(Bool())
+  val configonepe = Wire(Bool())
+  configonepe := ctrlregs(CGRAstateIndex) === state("config") && io.axistream_s.valid && io.axistream_s.ready;
+  configallpe := ctrlregs(CGRAstateIndex) === state("config") && ctrlregs_axil_wen && (currentAddressw >= ALL_I_initIndex.U) && (currentAddressw <=ALL_K_threadIndex.U)
+
+  when(configonepe){
     configwdata := io.axistream_s.data
     configwen := true.B
-    configwaddr := Mux(config_finish,0.U,configwaddrnext)
+    configwaddr := Mux(config_finish,1.U,configwaddrnext)
     when(configwaddr === peendaddr.U){
       configPEcnt := Mux(config_finish,0.U,configPEnext)
     }
+  }.elsewhen(configallpe){
+    configwdata := ctrlregs_axil_wdata
+    configwen := true.B
+    configwaddr := configwaddr
+    configPEcnt := configPEcnt
+  }.otherwise{
+    configwdata := 0.U
+    configwen := false.B
+    configwaddr := 0.U
+    configPEcnt := configPEcnt
   }
 
   //loaddata state
@@ -232,4 +240,13 @@ class CGRA extends Module with CGRAparams{
       }
     }
   }
+
+    // init PEs io.inLinks
+    for( i<-0 until cgrarows * cgracols ) {
+      (0 until pelinkNum ).foreach { linkindex => PEs(i).io.inLinks(linkindex):= 0.U}
+          PEs(i).io.wen := Mux(configallpe,configwen,configwen &&(configPEcnt === i.U))
+          PEs(i).io.waddr:=Mux(configallpe,currentAddressw+pectrlregsStartaddr.U,configwaddr)
+          PEs(i).io.wdata:=configwdata
+          PEs(i).io.run := ctrlregs(CGRAstateIndex) === state("exe")
+    }
 }

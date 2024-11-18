@@ -144,6 +144,15 @@ trait CGRActrlregsparams extends Commonparams{
   val CGRAdatamemstartaddrIndex = 3
   val CGRAdatamemaddaddrIndex = 4
   val CGRAdatamemreadlengthIndex = 5
+	val ALL_I_initIndex= 9
+	val ALL_J_initIndex= 10
+	val ALL_K_initIndex= 11
+	val ALL_I_incIndex= 12
+	val ALL_J_incIndex= 13
+	val ALL_K_incIndex= 14
+	val ALL_I_threadIndex=15
+	val ALL_J_threadIndex= 16
+	val ALL_K_threadIndex= 17
 }
 
 trait CGRAparams extends Commonparams with Crossbarparams with Aluparams with Srcmuxparams with InstMemparams with ConstMemparams with ShiftconstMemparams with DataMemparams with Instparams with PEctrlregsparams with CGRActrlregsparams {

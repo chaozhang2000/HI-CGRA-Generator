@@ -10,6 +10,7 @@ class PEctrlregs extends Module with CGRAparams{
           val configwaddr= Input(UInt(PEctrlregsaWidth.W))
           val configwen = Input(Bool())
           val configwdata = Input(UInt(PEctrlregsdWidth.W))
+
     })
   val Ctrlregs = Seq.tabulate(PEctrlregsNum) { i => Module(new utils.Register(PEctrlregsdWidth,0.U))}
   Ctrlregs.zipWithIndex.foreach { case (ctrlreg, i) =>
