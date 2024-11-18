@@ -153,6 +153,9 @@ trait CGRActrlregsparams extends Commonparams{
 	val ALL_I_threadIndex=15
 	val ALL_J_threadIndex= 16
 	val ALL_K_threadIndex= 17
+  val ALL_K_Index = 25
+  val ALL_J_Index = 26
+  val ALL_I_Index = 27
 }
 
 trait CGRAparams extends Commonparams with Crossbarparams with Aluparams with Srcmuxparams with InstMemparams with ConstMemparams with ShiftconstMemparams with DataMemparams with Instparams with PEctrlregsparams with CGRActrlregsparams {

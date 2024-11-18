@@ -24,6 +24,8 @@ class CGRA extends Module with CGRAparams{
     val configPEcnt = RegInit(0.U(dwidth.W))
     val configwdata = Wire(UInt(dwidth.W))
     val configwen = Wire(Bool())
+  val configallpe = Wire(Bool())
+  val configonepe = Wire(Bool())
     configwdata := 0.U;configwen:=false.B
 
     val state = Map(
@@ -34,19 +36,18 @@ class CGRA extends Module with CGRAparams{
       "getresult" -> 4.U
     )
 
+    // init PEs io.inLinks
+    val currentAddressw = RegInit(0.U(32.W))
+    for( i<-0 until cgrarows * cgracols ) {
+      (0 until pelinkNum ).foreach { linkindex => PEs(i).io.inLinks(linkindex):= 0.U}
+          PEs(i).io.wen := Mux(configallpe,configwen,configwen &&(configPEcnt === i.U))
+          PEs(i).io.waddr:=Mux(configallpe,currentAddressw+pectrlregsStartaddr.U,configwaddr)
+          PEs(i).io.wdata:=configwdata
+          PEs(i).io.run := ctrlregs(CGRAstateIndex) === state("exe")
+    }
+
     //connect datamem
     (0 until cgrarows*cgracols).foreach {i => PEs(i).io.datamemio.memoptvalid := 0.U;PEs(i).io.datamemio.rdata := 0.U;PEs(i).io.datamemio.peidfm := 0.U}
-    /*
-    (0 until datamemNum).foreach {i => 
-      PEs(i).io.datamemio <> Datamem(i).io
-      Datamem(i).io.wen := Mux((ctrlregs(CGRAstateIndex) === state("loaddata"))&&io.axistream_s.valid && io.axistream_s.ready,ctrlregs(CGRAdatamemIndex)===i.U,PEs(i).io.datamemio.wen)
-      Datamem(i).io.waddr :=Mux((ctrlregs(CGRAstateIndex) === state("loaddata")),ctrlregs(CGRAdatamemstartaddrIndex) + ctrlregs(CGRAdatamemaddaddrIndex),PEs(i).io.datamemio.waddr)
-      Datamem(i).io.wdata :=Mux((ctrlregs(CGRAstateIndex) === state("loaddata")),io.axistream_s.data,PEs(i).io.datamemio.wdata)
-
-      Datamem(i).io.raddr := Mux(ctrlregs(CGRAstateIndex) === state("getresult"),ctrlregs(CGRAdatamemstartaddrIndex) + ctrlregs(CGRAdatamemaddaddrIndex) + Mux(io.axistream_m.valid && io.axistream_m.ready,1.U,0.U),PEs(i).io.datamemio.raddr)
-      Datamem(i).io.ren := Mux(ctrlregs(CGRAstateIndex) === state("getresult"),true.B,PEs(i).io.datamemio.ren)
-    }
-    */
     (0 until datamemNum).foreach {i => 
       datamemaccess(i).foreach{ peid =>
         PEs(peid).io.datamemio.rdata := Datamem(i).io.rdata
@@ -114,7 +115,6 @@ class CGRA extends Module with CGRAparams{
   val statew = RegInit(0.U(2.W))
   val stater = RegInit(0.U(2.W))
   val currentAddressr = RegInit(0.U(32.W))
-  val currentAddressw = RegInit(0.U(32.W))
   val ctrlregs_axil_wen = Wire(Bool())
   val ctrlregs_axil_wdata = Wire(UInt(CGRActrlregsdWidth.W))
 
@@ -188,10 +188,8 @@ class CGRA extends Module with CGRAparams{
   config_finish := (configwaddr === peendaddr.U ) &&(configPEcnt === (cgrarows * cgracols -1).U)
   io.axistream_s.ready:= state("config") === ctrlregs(CGRAstateIndex) | state("loaddata") === ctrlregs(CGRAstateIndex)
 
-  val configallpe = Wire(Bool())
-  val configonepe = Wire(Bool())
   configonepe := ctrlregs(CGRAstateIndex) === state("config") && io.axistream_s.valid && io.axistream_s.ready;
-  configallpe := ctrlregs(CGRAstateIndex) === state("config") && ctrlregs_axil_wen && (currentAddressw >= ALL_I_initIndex.U) && (currentAddressw <=ALL_K_threadIndex.U)
+  configallpe := ctrlregs(CGRAstateIndex) === state("config") && ctrlregs_axil_wen && (((currentAddressw >= ALL_I_initIndex.U) && (currentAddressw <=ALL_K_threadIndex.U))|((currentAddressw >= ALL_K_Index.U) && (currentAddressw <= ALL_I_Index.U)))
 
   when(configonepe){
     configwdata := io.axistream_s.data
@@ -241,12 +239,4 @@ class CGRA extends Module with CGRAparams{
     }
   }
 
-    // init PEs io.inLinks
-    for( i<-0 until cgrarows * cgracols ) {
-      (0 until pelinkNum ).foreach { linkindex => PEs(i).io.inLinks(linkindex):= 0.U}
-          PEs(i).io.wen := Mux(configallpe,configwen,configwen &&(configPEcnt === i.U))
-          PEs(i).io.waddr:=Mux(configallpe,currentAddressw+pectrlregsStartaddr.U,configwaddr)
-          PEs(i).io.wdata:=configwdata
-          PEs(i).io.run := ctrlregs(CGRAstateIndex) === state("exe")
-    }
 }
