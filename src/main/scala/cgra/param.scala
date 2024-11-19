@@ -8,7 +8,7 @@ trait Commonparams{
   val cgractrlregsnum = 6
   val cgrastartaddr = 0xA0010000L
   val datamemNum = 4 
-  val datamemSize = 512
+  val datamemSize = 2048
   val datamemaccess = Map(
     0 -> Array(0,1,2,3),
     1 -> Array(4,5,6,7),

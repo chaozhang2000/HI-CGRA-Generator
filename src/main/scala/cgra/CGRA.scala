@@ -194,12 +194,12 @@ class CGRA extends Module with CGRAparams{
   when(configonepe){
     configwdata := io.axistream_s.data
     configwen := true.B
-    configwaddr := Mux(config_finish,1.U,configwaddrnext)
+    configwaddr := Mux(config_finish,0.U,configwaddrnext)
     when(configwaddr === peendaddr.U){
       configPEcnt := Mux(config_finish,0.U,configPEnext)
     }
   }.elsewhen(configallpe){
-    configwdata := ctrlregs_axil_wdata
+    configwdata := (io.axilite_s.wdata.bits &mask)
     configwen := true.B
     configwaddr := configwaddr
     configPEcnt := configPEcnt
@@ -227,13 +227,13 @@ class CGRA extends Module with CGRAparams{
 
   (0 until CGRActrlregsNum).foreach {i =>
     if(ctrlregnextmap.contains(i) && ctrlregwenmap.contains(i)){
-      when(ctrlregs_axil_wen){
+      when(ctrlregs_axil_wen && (~configallpe)){
         ctrlregs(currentAddressw) := ctrlregs_axil_wdata
       }.elsewhen(ctrlregwenmap(i) === true.B){
         ctrlregs(i) := ctrlregnextmap(i)
       }
     }else{
-      when(ctrlregs_axil_wen){
+      when(ctrlregs_axil_wen && (~configallpe)){
         ctrlregs(currentAddressw) := ctrlregs_axil_wdata
       }
     }
