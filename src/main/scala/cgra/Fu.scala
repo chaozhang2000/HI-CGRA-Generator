@@ -78,7 +78,11 @@ class Fu (ID:Int) extends Module with CGRAparams{
     if(supportedOperation.contains(op) == true){
     var opt : (SInt,SInt) => SInt = supportedOperation.get(op).get
     when (fn === supportedOpcode.getOrElse(op,0.U)){
+      if(op == "mul" && use16bitmul){
+      opresultmap(op) := opt(src1(15,0).asSInt,src2(15,0).asSInt).asUInt
+      }else{
       opresultmap(op) := opt(src1,src2).asUInt
+      }
       opresultvalidmap(op) :=true.B 
     }
     }

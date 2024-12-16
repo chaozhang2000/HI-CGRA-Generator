@@ -1,4 +1,5 @@
 package cgra
+import utils._
 import chisel3._
 import chisel3.util._
 import scala.collection.mutable.Map
@@ -11,6 +12,7 @@ class CGRA extends Module with CGRAparams{
           val axistream_s = new utils.AXI4StreamSlaveIO
           val axistream_m = Flipped(new utils.AXI4StreamSlaveIO)
     })
+
     //val PEs = Array.fill(cgrarows * cgracols)(Module(new PE(_)))
     val PEs = Array.tabulate(cgrarows * cgracols)(i => Module(new PE(i)))
     val Links = Array.fill(2 *cgrarows*(cgracols-1) + 2*cgracols * (cgrarows -1))(Module(new Link))
@@ -26,6 +28,11 @@ class CGRA extends Module with CGRAparams{
     val configwen = Wire(Bool())
   val configallpe = Wire(Bool())
   val configonepe = Wire(Bool())
+
+  val configallpepipe = Wire(Bool())
+  val configwdatapipe = Wire(UInt(dwidth.W))
+  val configallpewaddrpipe = Wire(UInt(dwidth.W))
+
     configwdata := 0.U;configwen:=false.B
 
     val state = Map(
@@ -40,8 +47,8 @@ class CGRA extends Module with CGRAparams{
     val currentAddressw = RegInit(0.U(32.W))
     for( i<-0 until cgrarows * cgracols ) {
       (0 until pelinkNum ).foreach { linkindex => PEs(i).io.inLinks(linkindex):= 0.U}
-          PEs(i).io.wen := Mux(configallpe,configwen,configwen &&(configPEcnt === i.U))
-          PEs(i).io.waddr:=Mux(configallpe,currentAddressw+pectrlregsStartaddr.U,configwaddr)
+          PEs(i).io.wen := Mux(configallpepipe,configwen,configwen &&(configPEcnt === i.U))
+          PEs(i).io.waddr:=Mux(configallpepipe,configallpewaddrpipe+pectrlregsStartaddr.U,configwaddr)
           PEs(i).io.wdata:=configwdata
           PEs(i).io.run := ctrlregs(CGRAstateIndex) === state("exe")
     }
@@ -190,7 +197,10 @@ class CGRA extends Module with CGRAparams{
 
   configonepe := ctrlregs(CGRAstateIndex) === state("config") && io.axistream_s.valid && io.axistream_s.ready;
   configallpe := ctrlregs(CGRAstateIndex) === state("config") && ctrlregs_axil_wen && (((currentAddressw >= ALL_I_initIndex.U) && (currentAddressw <=ALL_K_threadIndex.U))|((currentAddressw >= ALL_K_Index.U) && (currentAddressw <= ALL_I_Index.U)))
-
+  //configallpe := 0.B
+  PipelineConnect(configallpe,configallpepipe,ctrlregs(CGRAstateIndex)=/=state("config"))
+  PipelineConnect(io.axilite_s.wdata.bits &mask,configwdatapipe,ctrlregs(CGRAstateIndex)=/=state("config"))
+  PipelineConnect(currentAddressw,configallpewaddrpipe,ctrlregs(CGRAstateIndex)=/=state("config"))
   when(configonepe){
     configwdata := io.axistream_s.data
     configwen := true.B
@@ -198,8 +208,8 @@ class CGRA extends Module with CGRAparams{
     when(configwaddr === peendaddr.U){
       configPEcnt := Mux(config_finish,0.U,configPEnext)
     }
-  }.elsewhen(configallpe){
-    configwdata := (io.axilite_s.wdata.bits &mask)
+  }.elsewhen(configallpepipe){
+    configwdata := configwdatapipe
     configwen := true.B
     configwaddr := configwaddr
     configPEcnt := configPEcnt

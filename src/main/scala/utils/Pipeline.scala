@@ -23,6 +23,18 @@ import chisel3.util._
 //it has been test in nutshell,so we don't write a testbench for it, 
 //but we write a Module to explain how it used,you can also generate the verilog using this module
 object PipelineConnect {
+  def apply[T <: Data](left:T, right:T,isFlush:Bool) = {
+    val reg = RegInit(0.U.asTypeOf(left))
+    when(isFlush){
+    reg := 0.U.asTypeOf(left)
+    }.otherwise{
+    reg := left  
+    }
+    right := reg
+    //right := RegEnable(left, true.B)
+  }
+}
+object Pipelineconnect {
   def apply[T <: Data](left: DecoupledIO[T], right: DecoupledIO[T], rightOutFire: Bool, isFlush: Bool) = {
     val valid = RegInit(false.B)
 when(rightOutFire &&(~(left.valid&&right.ready))) {valid := false.B }
@@ -42,5 +54,5 @@ val inRight = Decoupled(Output(UInt(1.W)))
 val rightOutFire = Input(Bool())
 val isFlush = Input(Bool())
 })
-PipelineConnect(io.inLeft, io.inRight, io.rightOutFire, io.isFlush)
+Pipelineconnect(io.inLeft, io.inRight, io.rightOutFire, io.isFlush)
 }

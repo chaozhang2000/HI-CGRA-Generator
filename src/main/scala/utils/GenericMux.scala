@@ -8,6 +8,12 @@ class GenericMux(dWidth: Int, numOfInputs: Int) extends Module {
     val out = Output(UInt(dWidth.W)) // 输出
   })
 
+  /*
+  val muxResult = MuxCase(0.U,(0 until numOfInputs).map { i =>
+    (io.sel === i.U) -> io.in(i)
+  })
+  io.out := muxResult
+  */
   io.out := MuxLookup(io.sel, 0.U, 
     (0 until numOfInputs).map(i => i.U -> io.in(i))) // 使用 MuxLookup 构建 Mux 逻辑
 }
@@ -32,4 +38,5 @@ class Muxonehot(dWidth:Int,numOfInputs:Int) extends Module{
     val out = Output(UInt(dWidth.W)) // 输出
   })
   io.out := PriorityMux(io.in.zipWithIndex.map { case (input, idx) => (io.sel(idx) === true.B) -> input })
+  //io.out := Mux1H(io.in.zipWithIndex.map { case (input, idx) => io.sel(idx) -> input })
 }

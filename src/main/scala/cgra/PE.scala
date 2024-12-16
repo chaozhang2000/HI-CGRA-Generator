@@ -1,6 +1,7 @@
 package cgra
 import chisel3._
 import chisel3.util._
+import utils.PipelineConnect
 import scala.collection.mutable.Map
 
 class PE (ID:Int)extends Module with CGRAparams{
@@ -34,6 +35,42 @@ class PE (ID:Int)extends Module with CGRAparams{
   var regs = Map.empty[Int,UInt]
   (0 until PEctrlregsNum).foreach{i => regs += i->PEctrlregs.io.outData(i)}
 
+  //pipeline wire
+  val alukeypipe= Wire(UInt(log2Ceil(aluoptnum).W))
+  val srckeypipe = Wire(Vec(srcnum,UInt(log2Ceil(srcmuxInputNum).W)))
+  val linkkeypipe = Wire(Vec(pelinkNum,UInt(log2Ceil(crossbarInputNum).W)))
+  val useconstpipe = Wire(Vec(srcnum,Bool()))
+  val haveshiftconstpipe = Wire(Vec(srcnum,Bool()))
+  val linkneedtosendoutpipe =Wire(Vec(crossbarOutputNum,Bool())) 
+  val fuinstskippipe = Wire(Bool())
+  val linkinstskippipe = Wire(Vec(crossbarOutputNum,Bool())) 
+  val canexepipe = Wire(Bool())
+  val Kpipe = Wire(UInt(PEctrlregsdWidth.W))
+  val Jpipe = Wire(UInt(PEctrlregsdWidth.W))
+  val Ipipe = Wire(UInt(PEctrlregsdWidth.W))
+  val constpipe = Wire(Vec(constmemNum,UInt(constMemdWidth.W)))
+  val shiftconstpipe = Wire(Vec(shiftconstmemNum,UInt(shiftconstMemdWidth.W)))
+  val finishpipe = Wire(UInt(PEctrlregsdWidth.W))
+
+  PipelineConnect(Decoder.io.alukey,alukeypipe,!io.run)
+  PipelineConnect(Decoder.io.srckey,srckeypipe,!io.run)
+  PipelineConnect(Decoder.io.linkkey,linkkeypipe,!io.run)
+  PipelineConnect(Decoder.io.useconst,useconstpipe,!io.run)
+  PipelineConnect(Decoder.io.haveshiftconst,haveshiftconstpipe,!io.run)
+  PipelineConnect(Decoder.io.linkneedtosendout,linkneedtosendoutpipe,!io.run)
+  PipelineConnect(Decoder.io.fuinstskip,fuinstskippipe,!io.run)
+  PipelineConnect(Decoder.io.linkinstskip,linkinstskippipe,!io.run)
+  PipelineConnect(Decoder.io.canexe,canexepipe,!io.run)
+  PipelineConnect(regs(KIndex),Kpipe,!io.run)
+  PipelineConnect(regs(JIndex),Jpipe,!io.run)
+  PipelineConnect(regs(IIndex),Ipipe,!io.run)
+  PipelineConnect(Constmems(0).io.rdata,constpipe(0),!io.run)
+  PipelineConnect(Constmems(1).io.rdata,constpipe(1),!io.run)
+  PipelineConnect(Shiftconstmems(0).io.rdata,shiftconstpipe(0),!io.run)
+  PipelineConnect(Shiftconstmems(1).io.rdata,shiftconstpipe(1),!io.run)
+  PipelineConnect(regs(FinishIndex),finishpipe,!io.run)
+
+
 
   var ctrlregnextmap = Map.empty[Int,UInt]
   var ctrlregwenmap = Map.empty[Int,Bool]
@@ -63,22 +100,23 @@ class PE (ID:Int)extends Module with CGRAparams{
   val Inew = Mux(Iinit,regs(I_initIndex),regs(IIndex) + regs(I_incIndex))
   ctrlregnextmap +=(IIndex->Inew)
   ctrlregnextmap +=(StartcyclecntIndex -> Mux(regs(StartcyclecntIndex) < regs(StartcyclenumIndex), regs(StartcyclecntIndex) + 1.U,regs(StartcyclecntIndex)))
-  val canupdatestate =Decoder.io.canexe & io.run & (!io.finish)//TODO:if Crossbar have less then 4 outputs ?
-  ctrlregwenmap +=(InstcntIndex->canupdatestate)
-  ctrlregwenmap +=(Constcnt1Index->(canupdatestate&Decoder.io.useconst(0)))
-  ctrlregwenmap +=(Constcnt2Index->(canupdatestate&Decoder.io.useconst(1)))
-  ctrlregwenmap +=(Shiftconstcnt1Index->(canupdatestate&Decoder.io.haveshiftconst(0)))
-  ctrlregwenmap +=(Shiftconstcnt2Index-> (canupdatestate&Decoder.io.haveshiftconst(1)))
-  ctrlregwenmap +=(IIcntIndex->canupdatestate)
-  ctrlregwenmap +=(FinishIndex->canupdatestate)
-  ctrlregwenmap +=(KIndex->(canupdatestate&Kchange))
-  ctrlregwenmap +=(JIndex->(canupdatestate&Jchange))
-  ctrlregwenmap +=(IIndex->(canupdatestate&Ichange))
+  val regscanupdatestate =Decoder.io.canexe & io.run & (regs(FinishIndex) === 0.U)//TODO:if Crossbar have less then 4 outputs ?
+  val canupdatestatepipe = canexepipe & io.run & (!finishpipe)
+  ctrlregwenmap +=(InstcntIndex->regscanupdatestate)
+  ctrlregwenmap +=(Constcnt1Index->(regscanupdatestate&Decoder.io.useconst(0)))
+  ctrlregwenmap +=(Constcnt2Index->(regscanupdatestate&Decoder.io.useconst(1)))
+  ctrlregwenmap +=(Shiftconstcnt1Index->(regscanupdatestate&Decoder.io.haveshiftconst(0)))
+  ctrlregwenmap +=(Shiftconstcnt2Index-> (regscanupdatestate&Decoder.io.haveshiftconst(1)))
+  ctrlregwenmap +=(IIcntIndex->regscanupdatestate)
+  ctrlregwenmap +=(FinishIndex->regscanupdatestate)
+  ctrlregwenmap +=(KIndex->(regscanupdatestate&Kchange))
+  ctrlregwenmap +=(JIndex->(regscanupdatestate&Jchange))
+  ctrlregwenmap +=(IIndex->(regscanupdatestate&Ichange))
   ctrlregwenmap +=(StartcyclecntIndex->io.run)
 
   //fureg
   Fureg.io.inData := Alu.io.result.bits
-  Fureg.io.enable := canupdatestate & Alu.io.result.valid
+  Fureg.io.enable := canupdatestatepipe & Alu.io.result.valid
 
   //PEctrlregs
   PEctrlregs.io.configwen := io.wen
@@ -90,7 +128,7 @@ class PE (ID:Int)extends Module with CGRAparams{
 
 
   //Instmems
-  Instmems.foreach(_.io.raddr:= Mux(canupdatestate,ctrlregnextmap(InstcntIndex),regs(InstcntIndex)))
+  Instmems.foreach(_.io.raddr:= Mux(regscanupdatestate,ctrlregnextmap(InstcntIndex),regs(InstcntIndex)))
   Instmems.zipWithIndex.foreach { case (instMem, i) =>
       instMem.io.waddr := io.waddr - (instMemSize * i + instMemStartaddr).asUInt()
       instMem.io.wen := io.wen && io.waddr >= (instMemStartaddr+instMemSize*i).U && io.waddr < (instMemStartaddr + instMemSize*(i+1)).U
@@ -112,17 +150,17 @@ class PE (ID:Int)extends Module with CGRAparams{
   }
 
   //Constmems
-  Constmems(0).io.raddr:=Mux(canupdatestate&Decoder.io.useconst(0),ctrlregnextmap(Constcnt1Index),regs(Constcnt1Index))
-  Constmems(1).io.raddr:=Mux(canupdatestate&Decoder.io.useconst(1),ctrlregnextmap(Constcnt2Index),regs(Constcnt2Index))
-  Constmems.zipWithIndex.foreach { case (constMem, i) =>
+Constmems(0).io.raddr:=Mux(regscanupdatestate&Decoder.io.useconst(0),ctrlregnextmap(Constcnt1Index),regs(Constcnt1Index))
+Constmems(1).io.raddr:=Mux(regscanupdatestate&Decoder.io.useconst(1),ctrlregnextmap(Constcnt2Index),regs(Constcnt2Index))
+Constmems.zipWithIndex.foreach { case (constMem, i) =>
       constMem.io.waddr := io.waddr - (constMemSize * i + constMemStartaddr).asUInt()
       constMem.io.wen := io.wen && io.waddr >= (constMemStartaddr+constMemSize*i).U && io.waddr < (constMemStartaddr + constMemSize*(i+1)).U
       constMem.io.wdata := io.wdata
   }
 
   //ShiftConstmems
-  Shiftconstmems(0).io.raddr:= Mux(canupdatestate&Decoder.io.haveshiftconst(0),ctrlregnextmap(Shiftconstcnt1Index),regs(Shiftconstcnt1Index))
-  Shiftconstmems(1).io.raddr:= Mux(canupdatestate&Decoder.io.haveshiftconst(1),ctrlregnextmap(Shiftconstcnt2Index),regs(Shiftconstcnt2Index))
+  Shiftconstmems(0).io.raddr:= Mux(regscanupdatestate&Decoder.io.haveshiftconst(0),ctrlregnextmap(Shiftconstcnt1Index),regs(Shiftconstcnt1Index))
+  Shiftconstmems(1).io.raddr:= Mux(regscanupdatestate&Decoder.io.haveshiftconst(1),ctrlregnextmap(Shiftconstcnt2Index),regs(Shiftconstcnt2Index))
   Shiftconstmems.zipWithIndex.foreach { case (shiftconstMem, i) =>
       shiftconstMem.io.waddr := io.waddr - (shiftconstMemSize * i + shiftconstMemStartaddr).asUInt()
       shiftconstMem.io.wen := io.wen && io.waddr >= (shiftconstMemStartaddr+shiftconstMemSize*i).U && io.waddr < (shiftconstMemStartaddr + shiftconstMemSize*(i+1)).U
@@ -130,22 +168,22 @@ class PE (ID:Int)extends Module with CGRAparams{
   }
 
   Srcmuxs.zipWithIndex.foreach {case(srcmux,i) => 
-    srcmux.io.sel := Decoder.io.srckey(i)
+    srcmux.io.sel := srckeypipe(i)
     srcmux.io.in(0):= 0.U
     srcmux.io.in(1):= Fureg.io.outData
-    srcmux.io.in(2):= Constmems(i).io.rdata
+    srcmux.io.in(2):= constpipe(i)
     io.inLinks.zipWithIndex.foreach{case(link,j)=>srcmux.io.in(j+3):=link}
-    srcmux.io.in(7):= regs(KIndex)
-    srcmux.io.in(8):= regs(JIndex)
-    srcmux.io.in(9):= regs(IIndex)
+    srcmux.io.in(7):= Kpipe
+    srcmux.io.in(8):= Jpipe
+    srcmux.io.in(9):= Ipipe
   }
   //FU
-  Alu.io.fn := Decoder.io.alukey
-  Alu.io.src1:=Mux(Decoder.io.haveshiftconst(0),(Srcmuxs(0).io.out.asSInt +Shiftconstmems(0).io.rdata.asSInt).asUInt,Srcmuxs(0).io.out)
-  Alu.io.src2:=Mux(Decoder.io.haveshiftconst(1),(Srcmuxs(1).io.out.asSInt +Shiftconstmems(1).io.rdata.asSInt).asUInt,Srcmuxs(1).io.out)
+  Alu.io.fn := alukeypipe
+  Alu.io.src1:=Mux(haveshiftconstpipe(0),(Srcmuxs(0).io.out.asSInt +shiftconstpipe(0).asSInt).asUInt,Srcmuxs(0).io.out)
+  Alu.io.src2:=Mux(haveshiftconstpipe(1),(Srcmuxs(1).io.out.asSInt +shiftconstpipe(1).asSInt).asUInt,Srcmuxs(1).io.out)
   
   //Crossbar
-  Crossbar.io.select := Decoder.io.linkkey
+  Crossbar.io.select := linkkeypipe
   Crossbar.io.in(0):=0.U
   io.inLinks.zipWithIndex.foreach{case(link,i)=>Crossbar.io.in(i+1):=link}
   Crossbar.io.in(5):=Alu.io.result.bits
@@ -153,7 +191,7 @@ class PE (ID:Int)extends Module with CGRAparams{
 
   io.outLinks.zipWithIndex.foreach{case(link,i) =>
     link.bits := Crossbar.io.out(i)
-    link.valid := canupdatestate & Decoder.io.linkneedtosendout(i) & (!Decoder.io.linkinstskip(i))
+    link.valid := canupdatestatepipe & linkneedtosendoutpipe(i) & (!linkinstskippipe(i))
   }
       /*
   io.outLinks:=Crossbar.io.out.map(signal => {
@@ -165,8 +203,8 @@ class PE (ID:Int)extends Module with CGRAparams{
   */
   //datamem
   io.datamemio <> Alu.io.datamemio
-  io.datamemio.ren := Alu.io.datamemio.ren & canupdatestate & (!Decoder.io.fuinstskip)
-  io.datamemio.wen := Alu.io.datamemio.wen & canupdatestate & (!Decoder.io.fuinstskip)
+  io.datamemio.ren := Alu.io.datamemio.ren & canupdatestatepipe & (!fuinstskippipe)
+  io.datamemio.wen := Alu.io.datamemio.wen & canupdatestatepipe & (!fuinstskippipe)
 
-  io.finish := regs(FinishIndex) === 1.U
+  io.finish :=  finishpipe(0).asBool
 }
