@@ -21,7 +21,9 @@ class CGRA extends Module with CGRAparams{
           val axistream_s = new utils.AXI4StreamSlaveIO
           val streamin = Vec(loadFifoNum,new StreaminIO(dwidth))
           val streamout = Vec(storeFifoNum,new StreamoutIO(dwidth))
+          val trigger = Output(Bool())
     })
+
 
     val PEs = Array.tabulate(cgrarows * cgracols)(i => Module(new PE(i)))
     val Links = Array.fill(2 *cgrarows*(cgracols-1) + 2*cgracols * (cgrarows -1))(Module(new Link))
@@ -45,6 +47,7 @@ class CGRA extends Module with CGRAparams{
 
     configwdata := 0.U;configwen:=false.B
 
+    io.trigger := ctrlregs(DatasrctriggerIndex) === 1.U
     val state = Map(
       "idle" -> 0.U,
       "config" -> 1.U,

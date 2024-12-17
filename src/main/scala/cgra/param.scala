@@ -151,7 +151,7 @@ trait CGRActrlregsparams extends Commonparams{
   val CGRAdatamemstartaddrIndex = 3
   val CGRAdatamemaddaddrIndex = 4
   val CGRAdatamemreadlengthIndex = 5
-  val CGRAuseFIFO = 6
+  val DatasrctriggerIndex = 6
 	val ALL_I_initIndex= 9
 	val ALL_J_initIndex= 10
 	val ALL_K_initIndex= 11
