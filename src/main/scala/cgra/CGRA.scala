@@ -67,15 +67,27 @@ class CGRA extends Module with CGRAparams{
     //
     (0 until loadFifoNum).foreach{ i =>
       val dataindelay1 = RegInit(UInt(dwidth.W),0.U)
+      val dataindelay2 = RegInit(UInt(dwidth.W),0.U)
+      val dataindelay3 = RegInit(UInt(dwidth.W),0.U)
+      val dataindelay4 = RegInit(UInt(dwidth.W),0.U)
       dataindelay1 := io.streamin(i).data
+      dataindelay2 := dataindelay1 
+      dataindelay3 := dataindelay2 
+      dataindelay4 := dataindelay3 
       val validindelay1 = RegInit(Bool(),false.B)
+      val validindelay2 = RegInit(Bool(),false.B)
+      val validindelay3 = RegInit(Bool(),false.B)
+      val validindelay4 = RegInit(Bool(),false.B)
       validindelay1 := io.streamin(i).valid
+      validindelay2 := validindelay1 
+      validindelay3 := validindelay2 
+      validindelay4 := validindelay3 
       val peid2m = Wire(UInt(log2Ceil(cgrarows*cgracols).W))
       peid2m := PriorityMux(loadfifoaccess(i).map{peid => (PEs(peid).io.datamemio.ren)->PEs(peid).io.datamemio.peid2m})
       loadfifoaccess(i).foreach { peid =>
-        PEs(peid).io.datamemio.rdata := dataindelay1
+        PEs(peid).io.datamemio.rdata := dataindelay4
         PEs(peid).io.datamemio.peidfm := peid2m
-        PEs(peid).io.datamemio.memoptvalid := validindelay1
+        PEs(peid).io.datamemio.memoptvalid := validindelay4
       }
     }
     (0 until storeFifoNum).foreach{ i =>
