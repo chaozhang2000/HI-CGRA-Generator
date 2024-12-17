@@ -1,19 +1,24 @@
 package cgra
 
 trait Commonparams{
-  val cgrarows = 4
+  val cgrarows = 2
   val cgracols = 4
   val dwidth = 32
   val awidth = 32
-  val cgractrlregsnum = 6
+  val cgractrlregsnum = 7
   val cgrastartaddr = 0xA0010000L
   val datamemNum = 4 
+  val loadFifoNum = 2
+  val loadFifoSize = 2048
+  val storeFifoNum = 1
+  val storeFifoSize = 2048
   val datamemSize = 2048
-  val datamemaccess = Map(
-    0 -> Array(0,1,2,3),
-    1 -> Array(4,5,6,7),
-    2 -> Array(8,9,10,11),
-    3 -> Array(12,13,14,15)
+  val loadfifoaccess = Map(
+    0 -> Array(0,1,2),
+    1 -> Array(4,5,6)
+    )
+  val storefifoaccess = Map(
+    0 -> Array(3,7)
     )
   //PE
   val pelinkNum = 4
@@ -146,6 +151,7 @@ trait CGRActrlregsparams extends Commonparams{
   val CGRAdatamemstartaddrIndex = 3
   val CGRAdatamemaddaddrIndex = 4
   val CGRAdatamemreadlengthIndex = 5
+  val CGRAuseFIFO = 6
 	val ALL_I_initIndex= 9
 	val ALL_J_initIndex= 10
 	val ALL_K_initIndex= 11

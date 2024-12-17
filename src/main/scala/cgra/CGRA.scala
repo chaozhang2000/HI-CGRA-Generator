@@ -4,19 +4,29 @@ import chisel3._
 import chisel3.util._
 import scala.collection.mutable.Map
 
+class StreaminIO(size: Int) extends Bundle {
+    val valid = Input(Bool())
+    val data = Input(UInt(size.W))
+}
+class StreamoutIO(size: Int) extends Bundle {
+    val valid = Output(Bool())
+    val data = Output(UInt(size.W))
+}
+
 class CGRA extends Module with CGRAparams{
     val io = IO(new Bundle {
           val finish = Output(Bool())
 
           val axilite_s = new utils.AXI4LiteSlaveIO 
           val axistream_s = new utils.AXI4StreamSlaveIO
-          val axistream_m = Flipped(new utils.AXI4StreamSlaveIO)
+          val streamin = Vec(loadFifoNum,new StreaminIO(dwidth))
+          val streamout = Vec(storeFifoNum,new StreamoutIO(dwidth))
     })
 
-    //val PEs = Array.fill(cgrarows * cgracols)(Module(new PE(_)))
     val PEs = Array.tabulate(cgrarows * cgracols)(i => Module(new PE(i)))
     val Links = Array.fill(2 *cgrarows*(cgracols-1) + 2*cgracols * (cgrarows -1))(Module(new Link))
-    val Datamem= Array.fill(datamemNum)(Module(new Datamem))
+    //val LoadMemfifo = Array.fill(loadFifoNum)(Module(new MemFifo(dataMemdWidth,loadFifoSize)))
+    //val StoreMemfifo = Array.fill(storeFifoNum)(Module(new MemFifo(dataMemdWidth,storeFifoSize)))
 
     val ctrlregs = RegInit(VecInit(Seq.fill(CGRActrlregsNum)(0.U(CGRActrlregsdWidth.W))))
     var ctrlregnextmap = Map.empty[Int,UInt]
@@ -53,37 +63,32 @@ class CGRA extends Module with CGRAparams{
           PEs(i).io.run := ctrlregs(CGRAstateIndex) === state("exe")
     }
 
-    //connect datamem
-    (0 until cgrarows*cgracols).foreach {i => PEs(i).io.datamemio.memoptvalid := 0.U;PEs(i).io.datamemio.rdata := 0.U;PEs(i).io.datamemio.peidfm := 0.U}
-    (0 until datamemNum).foreach {i => 
-      datamemaccess(i).foreach{ peid =>
-        PEs(peid).io.datamemio.rdata := Datamem(i).io.rdata
-        PEs(peid).io.datamemio.peidfm := Datamem(i).io.peidfm
-        PEs(peid).io.datamemio.memoptvalid := Datamem(i).io.memoptvalid
+    //connect fifos
+    //
+    (0 until loadFifoNum).foreach{ i =>
+      val dataindelay1 = RegInit(UInt(dwidth.W),0.U)
+      dataindelay1 := io.streamin(i).data
+      val validindelay1 = RegInit(Bool(),false.B)
+      validindelay1 := io.streamin(i).valid
+      val peid2m = Wire(UInt(log2Ceil(cgrarows*cgracols).W))
+      peid2m := PriorityMux(loadfifoaccess(i).map{peid => (PEs(peid).io.datamemio.ren)->PEs(peid).io.datamemio.peid2m})
+      loadfifoaccess(i).foreach { peid =>
+        PEs(peid).io.datamemio.rdata := dataindelay1
+        PEs(peid).io.datamemio.peidfm := peid2m
+        PEs(peid).io.datamemio.memoptvalid := validindelay1
       }
-      
-      val memwen = Wire(Bool())
-      memwen := datamemaccess(i).map{peid => PEs(peid).io.datamemio.wen}.reduce(_ | _)
-      val memren = Wire(Bool())
-      memren := datamemaccess(i).map{peid => PEs(peid).io.datamemio.ren}.reduce(_ | _)
-      val memwaddr = Wire(UInt(dataMemaWidth.W))
-      memwaddr := PriorityMux(datamemaccess(i).map{peid => (PEs(peid).io.datamemio.wen -> PEs(peid).io.datamemio.waddr)})
-      val memwdata = Wire(UInt(dataMemdWidth.W))
-      memwdata := PriorityMux(datamemaccess(i).map{peid => (PEs(peid).io.datamemio.wen -> PEs(peid).io.datamemio.wdata)})
-      val memraddr = Wire(UInt(dataMemaWidth.W))
-      memraddr := PriorityMux(datamemaccess(i).map{peid => (PEs(peid).io.datamemio.ren -> PEs(peid).io.datamemio.raddr)})
-      val peid2m= Wire(UInt(log2Ceil(cgrarows*cgracols).W))
-      peid2m := PriorityMux(datamemaccess(i).map{peid => (PEs(peid).io.datamemio.ren|PEs(peid).io.datamemio.wen) -> PEs(peid).io.datamemio.peid2m})
-      Datamem(i).io.wen := Mux((ctrlregs(CGRAstateIndex) === state("loaddata"))&&io.axistream_s.valid && io.axistream_s.ready,ctrlregs(CGRAdatamemIndex)===i.U,memwen)
-      Datamem(i).io.waddr :=Mux((ctrlregs(CGRAstateIndex) === state("loaddata")),ctrlregs(CGRAdatamemstartaddrIndex) + ctrlregs(CGRAdatamemaddaddrIndex),memwaddr)
-      Datamem(i).io.wdata :=Mux((ctrlregs(CGRAstateIndex) === state("loaddata")),io.axistream_s.data,memwdata)
-
-      Datamem(i).io.raddr := Mux(ctrlregs(CGRAstateIndex) === state("getresult"),ctrlregs(CGRAdatamemstartaddrIndex) + ctrlregs(CGRAdatamemaddaddrIndex) + Mux(io.axistream_m.valid && io.axistream_m.ready,1.U,0.U),memraddr)
-      Datamem(i).io.ren := Mux(ctrlregs(CGRAstateIndex) === state("getresult"),true.B,memren)
-
-      Datamem(i).io.ren := Mux(ctrlregs(CGRAstateIndex) === state("getresult"),true.B,memren)
-
-      Datamem(i).io.peid2m := peid2m
+    }
+    (0 until storeFifoNum).foreach{ i =>
+      val peid2m1 = Wire(UInt(log2Ceil(cgrarows*cgracols).W))
+      peid2m1 := PriorityMux(storefifoaccess(i).map{peid => (PEs(peid).io.datamemio.wen)->PEs(peid).io.datamemio.peid2m})
+      storefifoaccess(i).foreach { peid =>
+        PEs(peid).io.datamemio.rdata := 0.U
+        PEs(peid).io.datamemio.peidfm :=peid2m1
+        PEs(peid).io.datamemio.memoptvalid := true.B
+      }
+        
+        io.streamout(i).data := PriorityMux(storefifoaccess(i).map{peid => (PEs(peid).io.datamemio.wen -> PEs(peid).io.datamemio.wdata)})
+        io.streamout(i).valid := storefifoaccess(i).map{peid => PEs(peid).io.datamemio.wen}.reduce(_ | _)
     }
 
 
@@ -186,6 +191,8 @@ class CGRA extends Module with CGRAparams{
 
   when((ctrlregs(CGRAstateIndex) === state("config") && config_finish === true.B)|(ctrlregs(CGRAstateIndex) === state("exe") && cgrafinish === true.B)){
     statenext := 0.U
+  }.elsewhen(io.streamin.map(_.valid).reduce(_&&_)){
+    statenext := 3.U
   }
   //config state
   val configPEnext = Wire(UInt(dwidth.W))
@@ -222,18 +229,13 @@ class CGRA extends Module with CGRAparams{
 
   //loaddata state
   //getresult state
-  io.axistream_m.valid := (ctrlregs(CGRAstateIndex) === state("getresult")) && (ctrlregs(CGRAdatamemaddaddrIndex) < ctrlregs(CGRAdatamemreadlengthIndex)) &&(VecInit(Datamem.map(mem=>mem.io.memoptvalid)).apply(ctrlregs(CGRAdatamemIndex)))
-  io.axistream_m.data := VecInit(Datamem.map(mem=>mem.io.rdata)).apply(ctrlregs(CGRAdatamemIndex))
-  io.axistream_m.last := (ctrlregs(CGRAstateIndex) === state("getresult")) && (ctrlregs(CGRAdatamemaddaddrIndex) === ctrlregs(CGRAdatamemreadlengthIndex) - 1.U)
   //regs update
     ctrlregnextmap +=(CGRAfinishIndex -> cgrafinish)
     ctrlregwenmap +=(CGRAfinishIndex -> cgrafinish)
 
     ctrlregnextmap += (CGRAstateIndex -> statenext)
-    ctrlregwenmap +=(CGRAstateIndex -> (config_finish | cgrafinish))
+    ctrlregwenmap +=(CGRAstateIndex -> (config_finish | cgrafinish |io.streamin.map(_.valid).reduce(_&&_)))
     
-    ctrlregnextmap += (CGRAdatamemaddaddrIndex-> (ctrlregs(CGRAdatamemaddaddrIndex) + 1.U))
-    ctrlregwenmap +=(CGRAdatamemaddaddrIndex->(((ctrlregs(CGRAstateIndex) === state("loaddata"))&&io.axistream_s.valid && io.axistream_s.ready)|((ctrlregs(CGRAstateIndex) === state("getresult")&&io.axistream_m.valid && io.axistream_m.ready)&&(ctrlregs(CGRAdatamemaddaddrIndex) < ctrlregs(CGRAdatamemreadlengthIndex)))))
 
   (0 until CGRActrlregsNum).foreach {i =>
     if(ctrlregnextmap.contains(i) && ctrlregwenmap.contains(i)){
