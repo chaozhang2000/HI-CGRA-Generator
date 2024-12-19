@@ -18,7 +18,7 @@ class CGRA extends Module with CGRAparams{
           val finish = Output(Bool())
 
           val axilite_s = new utils.AXI4LiteSlaveIO 
-          val axistream_s = new utils.AXI4StreamSlaveIO
+          val axistream_s = new utils.AXI4StreamSlaveIO(64)
           val streamin = Vec(loadFifoNum,new StreaminIO(dwidth))
           val streamout = Vec(storeFifoNum,new StreamoutIO(dwidth))
           val trigger = Output(Bool())
@@ -224,7 +224,7 @@ class CGRA extends Module with CGRAparams{
   PipelineConnect(io.axilite_s.wdata.bits &mask,configwdatapipe,ctrlregs(CGRAstateIndex)=/=state("config"))
   PipelineConnect(currentAddressw,configallpewaddrpipe,ctrlregs(CGRAstateIndex)=/=state("config"))
   when(configonepe){
-    configwdata := io.axistream_s.data
+    configwdata := io.axistream_s.data(31,0)
     configwen := true.B
     configwaddr := Mux(config_finish,0.U,configwaddrnext)
     when(configwaddr === peendaddr.U){
@@ -238,7 +238,7 @@ class CGRA extends Module with CGRAparams{
   }.otherwise{
     configwdata := 0.U
     configwen := false.B
-    configwaddr := 0.U
+    configwaddr := configwaddr
     configPEcnt := configPEcnt
   }
 
