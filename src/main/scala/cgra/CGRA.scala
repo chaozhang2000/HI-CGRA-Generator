@@ -4,6 +4,22 @@ import chisel3._
 import chisel3.util._
 import scala.collection.mutable.Map
 
+class DelayChain(width: Int, delayStages: Int) extends Module {
+    val io = IO(new Bundle {
+          val input = Input(UInt(width.W))
+              val output = Output(UInt(width.W))
+                })
+
+val delayRegisters = RegInit(VecInit(Seq.fill(delayStages)(0.U(width.W))))
+for (i <- 0 until delayStages) {
+if (i == 0) {
+    delayRegisters(i) := io.input
+} else {
+    delayRegisters(i) := delayRegisters(i - 1)
+}
+}
+io.output := delayRegisters(delayStages - 1)
+ }
 class StreaminIO(size: Int) extends Bundle {
     val valid = Input(Bool())
     val data = Input(UInt(size.W))
@@ -59,6 +75,7 @@ class CGRA extends Module with CGRAparams{
     // init PEs io.inLinks
     val currentAddressw = RegInit(0.U(32.W))
     for( i<-0 until cgrarows * cgracols ) {
+          PEs(i).io.rst := (!(ctrlregs(CGRAstateIndex) === state("exe")))&& io.streamin.map(_.valid).reduce(_&&_)
       (0 until pelinkNum ).foreach { linkindex => PEs(i).io.inLinks(linkindex):= 0.U}
           PEs(i).io.wen := Mux(configallpepipe,configwen,configwen &&(configPEcnt === i.U))
           PEs(i).io.waddr:=Mux(configallpepipe,configallpewaddrpipe+pectrlregsStartaddr.U,configwaddr)
@@ -68,29 +85,19 @@ class CGRA extends Module with CGRAparams{
 
     //connect fifos
     //
+    //val dataindelay= VecInit(Seq.fill(loadFifoNum)(VecInit(Seq.fill(4)(RegInit(0.U(dwidth.W))))))
+    val dataindelay = Seq.fill(loadFifoNum)(Module(new DelayChain(dwidth,4)))
+    val validindelay= Seq.fill(loadFifoNum)(Module(new DelayChain(1,4)))
+
     (0 until loadFifoNum).foreach{ i =>
-      val dataindelay1 = RegInit(UInt(dwidth.W),0.U)
-      val dataindelay2 = RegInit(UInt(dwidth.W),0.U)
-      val dataindelay3 = RegInit(UInt(dwidth.W),0.U)
-      val dataindelay4 = RegInit(UInt(dwidth.W),0.U)
-      dataindelay1 := io.streamin(i).data
-      dataindelay2 := dataindelay1 
-      dataindelay3 := dataindelay2 
-      dataindelay4 := dataindelay3 
-      val validindelay1 = RegInit(Bool(),false.B)
-      val validindelay2 = RegInit(Bool(),false.B)
-      val validindelay3 = RegInit(Bool(),false.B)
-      val validindelay4 = RegInit(Bool(),false.B)
-      validindelay1 := io.streamin(i).valid
-      validindelay2 := validindelay1 
-      validindelay3 := validindelay2 
-      validindelay4 := validindelay3 
+      dataindelay(i).io.input := io.streamin(i).data
+      validindelay(i).io.input := io.streamin(i).valid
       val peid2m = Wire(UInt(log2Ceil(cgrarows*cgracols).W))
       peid2m := PriorityMux(loadfifoaccess(i).map{peid => (PEs(peid).io.datamemio.ren)->PEs(peid).io.datamemio.peid2m})
       loadfifoaccess(i).foreach { peid =>
-        PEs(peid).io.datamemio.rdata := dataindelay4
+        PEs(peid).io.datamemio.rdata := dataindelay(i).io.output
         PEs(peid).io.datamemio.peidfm := peid2m
-        PEs(peid).io.datamemio.memoptvalid := validindelay4
+        PEs(peid).io.datamemio.memoptvalid := validindelay(i).io.output
       }
     }
     (0 until storeFifoNum).foreach{ i =>
@@ -204,7 +211,11 @@ class CGRA extends Module with CGRAparams{
   val statenext = Wire(UInt(CGRActrlregsdWidth.W))
   statenext :=ctrlregs(CGRAstateIndex)
 
-  when((ctrlregs(CGRAstateIndex) === state("config") && config_finish === true.B)|(ctrlregs(CGRAstateIndex) === state("exe") && cgrafinish === true.B)){
+  val validinallzero = Wire(Bool())
+  val validindelayallzero = Wire(Bool())
+  validinallzero := !io.streamin.map(_.valid).reduce(_|_)
+  validindelayallzero := RegNext(!validindelay.map(_.io.output).reduce(_|_))
+  when((ctrlregs(CGRAstateIndex) === state("config") && config_finish === true.B)|(ctrlregs(CGRAstateIndex) === state("exe") && validinallzero&&validindelayallzero)){
     statenext := 0.U
   }.elsewhen(io.streamin.map(_.valid).reduce(_&&_)){
     statenext := 3.U
@@ -249,7 +260,7 @@ class CGRA extends Module with CGRAparams{
     ctrlregwenmap +=(CGRAfinishIndex -> cgrafinish)
 
     ctrlregnextmap += (CGRAstateIndex -> statenext)
-    ctrlregwenmap +=(CGRAstateIndex -> (config_finish | cgrafinish |io.streamin.map(_.valid).reduce(_&&_)))
+    ctrlregwenmap +=(CGRAstateIndex -> (config_finish | cgrafinish |io.streamin.map(_.valid).reduce(_&&_)|(!(validindelay.map(_.io.output).reduce(_|_)))))
     
 
   (0 until CGRActrlregsNum).foreach {i =>

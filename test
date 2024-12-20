@@ -1,119 +1,28 @@
 sbt run
-[info] welcome to sbt 1.10.2 (Ubuntu Java 11.0.25)
+[info] welcome to sbt 1.10.5 (Ubuntu Java 11.0.25)
 [info] loading project definition from /home/zc/HI-CGRA-Flow/HI-CGRA-Generator/project
 [info] loading settings for project hi-cgra-generator from build.sbt ...
 [info] set current project to hi-cgra-generator (in build file:/home/zc/HI-CGRA-Flow/HI-CGRA-Generator/)
-[info] compiling 1 Scala source to /home/zc/HI-CGRA-Flow/HI-CGRA-Generator/target/scala-2.12/classes ...
-[info] done compiling
 [info] running cgra.AddMain 
 Generating the CGRA
-[error] firrtl.passes.PassExceptions: 
-[error] firrtl.passes.CheckInitialization$RefNotInitializedException:  : [module CGRA]  Reference io is not fully initialized.
-[error]    : io.fifoout[0].dout <= VOID
-[error] firrtl.passes.CheckInitialization$RefNotInitializedException:  @[CGRA.scala 23:55] : [module CGRA]  Reference MemFifo_4 is not fully initialized.
-[error]    : MemFifo_4.io.read.read <= VOID
-[error] firrtl.passes.CheckInitialization$RefNotInitializedException:  @[CGRA.scala 22:53] : [module CGRA]  Reference MemFifo_3 is not fully initialized.
-[error]    : MemFifo_3.io.write.din <= VOID
-[error] firrtl.passes.CheckInitialization$RefNotInitializedException:  @[CGRA.scala 23:55] : [module CGRA]  Reference MemFifo_4 is not fully initialized.
-[error]    : MemFifo_4.io.write.write <= VOID
-[error] firrtl.passes.CheckInitialization$RefNotInitializedException:  @[CGRA.scala 22:53] : [module CGRA]  Reference MemFifo_3 is not fully initialized.
-[error]    : MemFifo_3.io.read.read <= VOID
-[error] firrtl.passes.CheckInitialization$RefNotInitializedException:  @[CGRA.scala 22:53] : [module CGRA]  Reference MemFifo_2 is not fully initialized.
-[error]    : MemFifo_2.io.write.din <= VOID
-[error] firrtl.passes.CheckInitialization$RefNotInitializedException:  : [module CGRA]  Reference io is not fully initialized.
-[error]    : io.fifoin[1].full <= VOID
-[error] firrtl.passes.CheckInitialization$RefNotInitializedException:  @[CGRA.scala 22:53] : [module CGRA]  Reference MemFifo_1 is not fully initialized.
-[error]    : MemFifo_1.io.write.din <= VOID
-[error] firrtl.passes.CheckInitialization$RefNotInitializedException:  : [module CGRA]  Reference io is not fully initialized.
-[error]    : io.fifoin[0].full <= VOID
-[error] firrtl.passes.CheckInitialization$RefNotInitializedException:  @[CGRA.scala 22:53] : [module CGRA]  Reference MemFifo is not fully initialized.
-[error]    : MemFifo.io.write.din <= VOID
-[error] firrtl.passes.CheckInitialization$RefNotInitializedException:  @[CGRA.scala 22:53] : [module CGRA]  Reference MemFifo_3 is not fully initialized.
-[error]    : MemFifo_3.io.write.write <= VOID
-[error] firrtl.passes.CheckInitialization$RefNotInitializedException:  : [module CGRA]  Reference io is not fully initialized.
-[error]    : io.fifoout[1].empty <= VOID
-[error] firrtl.passes.CheckInitialization$RefNotInitializedException:  @[CGRA.scala 22:53] : [module CGRA]  Reference MemFifo_2 is not fully initialized.
-[error]    : MemFifo_2.io.write.write <= VOID
-[error] firrtl.passes.CheckInitialization$RefNotInitializedException:  @[CGRA.scala 22:53] : [module CGRA]  Reference MemFifo_2 is not fully initialized.
-[error]    : MemFifo_2.io.read.read <= VOID
-[error] firrtl.passes.CheckInitialization$RefNotInitializedException:  : [module CGRA]  Reference io is not fully initialized.
-[error]    : io.fifoin[3].full <= VOID
-[error] firrtl.passes.CheckInitialization$RefNotInitializedException:  @[CGRA.scala 23:55] : [module CGRA]  Reference MemFifo_5 is not fully initialized.
-[error]    : MemFifo_5.io.write.din <= VOID
-[error] firrtl.passes.CheckInitialization$RefNotInitializedException:  : [module CGRA]  Reference io is not fully initialized.
-[error]    : io.fifoout[0].empty <= VOID
-[error] firrtl.passes.CheckInitialization$RefNotInitializedException:  : [module CGRA]  Reference io is not fully initialized.
-[error]    : io.fifoout[1].dout <= VOID
-[error] firrtl.passes.CheckInitialization$RefNotInitializedException:  @[CGRA.scala 22:53] : [module CGRA]  Reference MemFifo is not fully initialized.
-[error]    : MemFifo.io.read.read <= VOID
-[error] firrtl.passes.CheckInitialization$RefNotInitializedException:  @[CGRA.scala 22:53] : [module CGRA]  Reference MemFifo_1 is not fully initialized.
-[error]    : MemFifo_1.io.read.read <= VOID
-[error] firrtl.passes.CheckInitialization$RefNotInitializedException:  @[CGRA.scala 23:55] : [module CGRA]  Reference MemFifo_5 is not fully initialized.
-[error]    : MemFifo_5.io.read.read <= VOID
-[error] firrtl.passes.CheckInitialization$RefNotInitializedException:  @[CGRA.scala 22:53] : [module CGRA]  Reference MemFifo is not fully initialized.
-[error]    : MemFifo.io.write.write <= VOID
-[error] firrtl.passes.CheckInitialization$RefNotInitializedException:  @[CGRA.scala 23:55] : [module CGRA]  Reference MemFifo_5 is not fully initialized.
-[error]    : MemFifo_5.io.write.write <= VOID
-[error] firrtl.passes.CheckInitialization$RefNotInitializedException:  : [module CGRA]  Reference io is not fully initialized.
-[error]    : io.fifoin[2].full <= VOID
-[error] firrtl.passes.CheckInitialization$RefNotInitializedException:  @[CGRA.scala 22:53] : [module CGRA]  Reference MemFifo_1 is not fully initialized.
-[error]    : MemFifo_1.io.write.write <= VOID
-[error] firrtl.passes.CheckInitialization$RefNotInitializedException:  @[CGRA.scala 23:55] : [module CGRA]  Reference MemFifo_4 is not fully initialized.
-[error]    : MemFifo_4.io.write.din <= VOID
-[error] firrtl.passes.PassException: 26 errors detected!
+[error] java.lang.IndexOutOfBoundsException: 4
+[error] 	at ... ()
+[error] 	at cgra.CGRA.$anonfun$new$32(CGRA.scala:89)
+[error] 	at chisel3.Data.$anonfun$$colon$eq$1(Data.scala:796)
+[error] 	at scala.runtime.java8.JFunction0$mcV$sp.apply(JFunction0$mcV$sp.java:23)
+[error] 	at chisel3.internal.prefix$.apply(prefix.scala:31)
+[error] 	at chisel3.Data.$colon$eq(Data.scala:796)
+[error] 	at cgra.CGRA.$anonfun$new$31(CGRA.scala:89)
+[error] 	at scala.runtime.java8.JFunction1$mcVI$sp.apply(JFunction1$mcVI$sp.java:23)
+[error] 	at scala.collection.IndexedSeqOptimized.foreach(IndexedSeqOptimized.scala:36)
+[error] 	at scala.collection.IndexedSeqOptimized.foreach$(IndexedSeqOptimized.scala:33)
+[error] 	at scala.collection.mutable.ArrayOps$ofInt.foreach(ArrayOps.scala:246)
+[error] 	at cgra.CGRA.$anonfun$new$11(CGRA.scala:88)
+[error] 	at scala.collection.immutable.Range.foreach$mVc$sp(Range.scala:158)
+[error] 	at cgra.CGRA.<init>(CGRA.scala:73)
+[error] 	at cgra.AddMain$.$anonfun$new$1(Top.scala:8)
+[error] 	at ... ()
+[error] 	at ... (Stack trace trimmed to user code only. Rerun with --full-stacktrace to see the full stack trace)
 [error] stack trace is suppressed; run 'last Compile / run' for the full output
-[error] (Compile / run) firrtl.passes.PassExceptions: 
-[error] firrtl.passes.CheckInitialization$RefNotInitializedException:  : [module CGRA]  Reference io is not fully initialized.
-[error]    : io.fifoout[0].dout <= VOID
-[error] firrtl.passes.CheckInitialization$RefNotInitializedException:  @[CGRA.scala 23:55] : [module CGRA]  Reference MemFifo_4 is not fully initialized.
-[error]    : MemFifo_4.io.read.read <= VOID
-[error] firrtl.passes.CheckInitialization$RefNotInitializedException:  @[CGRA.scala 22:53] : [module CGRA]  Reference MemFifo_3 is not fully initialized.
-[error]    : MemFifo_3.io.write.din <= VOID
-[error] firrtl.passes.CheckInitialization$RefNotInitializedException:  @[CGRA.scala 23:55] : [module CGRA]  Reference MemFifo_4 is not fully initialized.
-[error]    : MemFifo_4.io.write.write <= VOID
-[error] firrtl.passes.CheckInitialization$RefNotInitializedException:  @[CGRA.scala 22:53] : [module CGRA]  Reference MemFifo_3 is not fully initialized.
-[error]    : MemFifo_3.io.read.read <= VOID
-[error] firrtl.passes.CheckInitialization$RefNotInitializedException:  @[CGRA.scala 22:53] : [module CGRA]  Reference MemFifo_2 is not fully initialized.
-[error]    : MemFifo_2.io.write.din <= VOID
-[error] firrtl.passes.CheckInitialization$RefNotInitializedException:  : [module CGRA]  Reference io is not fully initialized.
-[error]    : io.fifoin[1].full <= VOID
-[error] firrtl.passes.CheckInitialization$RefNotInitializedException:  @[CGRA.scala 22:53] : [module CGRA]  Reference MemFifo_1 is not fully initialized.
-[error]    : MemFifo_1.io.write.din <= VOID
-[error] firrtl.passes.CheckInitialization$RefNotInitializedException:  : [module CGRA]  Reference io is not fully initialized.
-[error]    : io.fifoin[0].full <= VOID
-[error] firrtl.passes.CheckInitialization$RefNotInitializedException:  @[CGRA.scala 22:53] : [module CGRA]  Reference MemFifo is not fully initialized.
-[error]    : MemFifo.io.write.din <= VOID
-[error] firrtl.passes.CheckInitialization$RefNotInitializedException:  @[CGRA.scala 22:53] : [module CGRA]  Reference MemFifo_3 is not fully initialized.
-[error]    : MemFifo_3.io.write.write <= VOID
-[error] firrtl.passes.CheckInitialization$RefNotInitializedException:  : [module CGRA]  Reference io is not fully initialized.
-[error]    : io.fifoout[1].empty <= VOID
-[error] firrtl.passes.CheckInitialization$RefNotInitializedException:  @[CGRA.scala 22:53] : [module CGRA]  Reference MemFifo_2 is not fully initialized.
-[error]    : MemFifo_2.io.write.write <= VOID
-[error] firrtl.passes.CheckInitialization$RefNotInitializedException:  @[CGRA.scala 22:53] : [module CGRA]  Reference MemFifo_2 is not fully initialized.
-[error]    : MemFifo_2.io.read.read <= VOID
-[error] firrtl.passes.CheckInitialization$RefNotInitializedException:  : [module CGRA]  Reference io is not fully initialized.
-[error]    : io.fifoin[3].full <= VOID
-[error] firrtl.passes.CheckInitialization$RefNotInitializedException:  @[CGRA.scala 23:55] : [module CGRA]  Reference MemFifo_5 is not fully initialized.
-[error]    : MemFifo_5.io.write.din <= VOID
-[error] firrtl.passes.CheckInitialization$RefNotInitializedException:  : [module CGRA]  Reference io is not fully initialized.
-[error]    : io.fifoout[0].empty <= VOID
-[error] firrtl.passes.CheckInitialization$RefNotInitializedException:  : [module CGRA]  Reference io is not fully initialized.
-[error]    : io.fifoout[1].dout <= VOID
-[error] firrtl.passes.CheckInitialization$RefNotInitializedException:  @[CGRA.scala 22:53] : [module CGRA]  Reference MemFifo is not fully initialized.
-[error]    : MemFifo.io.read.read <= VOID
-[error] firrtl.passes.CheckInitialization$RefNotInitializedException:  @[CGRA.scala 22:53] : [module CGRA]  Reference MemFifo_1 is not fully initialized.
-[error]    : MemFifo_1.io.read.read <= VOID
-[error] firrtl.passes.CheckInitialization$RefNotInitializedException:  @[CGRA.scala 23:55] : [module CGRA]  Reference MemFifo_5 is not fully initialized.
-[error]    : MemFifo_5.io.read.read <= VOID
-[error] firrtl.passes.CheckInitialization$RefNotInitializedException:  @[CGRA.scala 22:53] : [module CGRA]  Reference MemFifo is not fully initialized.
-[error]    : MemFifo.io.write.write <= VOID
-[error] firrtl.passes.CheckInitialization$RefNotInitializedException:  @[CGRA.scala 23:55] : [module CGRA]  Reference MemFifo_5 is not fully initialized.
-[error]    : MemFifo_5.io.write.write <= VOID
-[error] firrtl.passes.CheckInitialization$RefNotInitializedException:  : [module CGRA]  Reference io is not fully initialized.
-[error]    : io.fifoin[2].full <= VOID
-[error] firrtl.passes.CheckInitialization$RefNotInitializedException:  @[CGRA.scala 22:53] : [module CGRA]  Reference MemFifo_1 is not fully initialized.
-[error]    : MemFifo_1.io.write.write <= VOID
-[error] firrtl.passes.CheckInitialization$RefNotInitializedException:  @[CGRA.scala 23:55] : [module CGRA]  Reference MemFifo_4 is not fully initialized.
-[error]    : MemFifo_4.io.write.din <= VOID
-[error] firrtl.passes.PassException: 26 errors detected!
-[error] Total time: 7 s, completed Dec 16, 2024, 12:13:08 PM
+[error] (Compile / run) java.lang.IndexOutOfBoundsException: 4
+[error] Total time: 4 s, completed Dec 20, 2024, 2:20:24 PM

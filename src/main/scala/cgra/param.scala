@@ -6,7 +6,7 @@ trait Commonparams{
   val dwidth = 32
   val awidth = 32
   val cgractrlregsnum = 7
-  val cgrastartaddr = 0xA0010000L
+  val cgrastartaddr = 0xA0020000L
   val datamemNum = 4 
   val loadFifoNum = 2
   val loadFifoSize = 2048

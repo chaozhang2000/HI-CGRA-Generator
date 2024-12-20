@@ -10,6 +10,7 @@ class PE (ID:Int)extends Module with CGRAparams{
           val outLinks = Output(Vec(pelinkNum,Valid(UInt(dwidth.W))))
           val run = Input(Bool())
           val wen = Input(Bool())
+          val rst = Input(Bool())
           val waddr= Input(UInt(awidth.W))
           val wdata = Input(UInt(dwidth.W))
           val finish = Output(Bool())
@@ -74,15 +75,16 @@ class PE (ID:Int)extends Module with CGRAparams{
 
   var ctrlregnextmap = Map.empty[Int,UInt]
   var ctrlregwenmap = Map.empty[Int,Bool]
-  def regnext1(idcnt:Int,idnum:Int) : (Int,UInt) = {
-    idcnt ->Mux((regs(idcnt)<regs(idnum)-1.U)&(regs(idnum)> 0.U),regs(idcnt)+ 1.U,0.U)
+  def regnext1(idcnt:Int,idnum:Int,rst:Bool) : (Int,UInt) = {
+    idcnt ->Mux(rst,0.U,Mux((regs(idcnt)<regs(idnum)-1.U)&(regs(idnum)> 0.U),regs(idcnt)+ 1.U,0.U))
   }
   val regnext1cntregs:Seq[Int] = Seq(InstcntIndex,Constcnt1Index,Constcnt2Index,Shiftconstcnt1Index,Shiftconstcnt2Index)
   val regnext1numregs:Seq[Int] = Seq(InstnumIndex,Constnum1Index,Constnum2Index,Shiftconstnum1Index,Shiftconstnum2Index)
-  regnext1cntregs.zip(regnext1numregs).foreach{case(cnt,num)=>ctrlregnextmap +=regnext1(cnt,num)}
+  regnext1cntregs.zip(regnext1numregs).foreach{case(cnt,num)=>ctrlregnextmap +=regnext1(cnt,num,io.rst)}
 
-  ctrlregnextmap +=(IIcntIndex -> Mux(regs(InstcntIndex) ===regs(InstnumIndex)-1.U,regs(IIcntIndex)+ 1.U,regs(IIcntIndex)))
-  ctrlregnextmap +=(FinishIndex -> ((regs(IIcntIndex) === regs(FinishIIcntIndex)) & (regs(InstcntIndex)=== regs(FinishInstcntIndex))).asUInt)
+  ctrlregnextmap +=(IIcntIndex -> Mux(io.rst,0.U,Mux(regs(InstcntIndex) ===regs(InstnumIndex)-1.U,regs(IIcntIndex)+ 1.U,regs(IIcntIndex))))
+  //ctrlregnextmap +=(FinishIndex -> ((regs(IIcntIndex) === regs(FinishIIcntIndex)) & (regs(InstcntIndex)=== regs(FinishInstcntIndex))).asUInt)
+  ctrlregnextmap +=(FinishIndex -> 0.U)
 
   def Loopnuminit(cntID:Int,incID:Int,threadID:Int,change:Bool): Bool = {
     Mux(regs(incID).asSInt>0.S,regs(cntID).asSInt + regs(incID).asSInt >= regs(threadID).asSInt,regs(cntID).asSInt + regs(incID).asSInt <= regs(threadID).asSInt)&change 
@@ -99,7 +101,7 @@ class PE (ID:Int)extends Module with CGRAparams{
   val Iinit = Loopnuminit(IIndex,I_incIndex,I_threadIndex,Ichange)
   val Inew = Mux(Iinit,regs(I_initIndex),regs(IIndex) + regs(I_incIndex))
   ctrlregnextmap +=(IIndex->Inew)
-  ctrlregnextmap +=(StartcyclecntIndex -> Mux(regs(StartcyclecntIndex) < regs(StartcyclenumIndex), regs(StartcyclecntIndex) + 1.U,regs(StartcyclecntIndex)))
+  ctrlregnextmap +=(StartcyclecntIndex -> Mux(io.rst,0.U,Mux(regs(StartcyclecntIndex) < regs(StartcyclenumIndex), regs(StartcyclecntIndex) + 1.U,regs(StartcyclecntIndex))))
   val regscanupdatestate =Decoder.io.canexe & io.run & (regs(FinishIndex) === 0.U)//TODO:if Crossbar have less then 4 outputs ?
   val canupdatestatepipe = canexepipe & io.run & (!finishpipe)
   ctrlregwenmap +=(InstcntIndex->regscanupdatestate)
@@ -107,12 +109,12 @@ class PE (ID:Int)extends Module with CGRAparams{
   ctrlregwenmap +=(Constcnt2Index->(regscanupdatestate&Decoder.io.useconst(1)))
   ctrlregwenmap +=(Shiftconstcnt1Index->(regscanupdatestate&Decoder.io.haveshiftconst(0)))
   ctrlregwenmap +=(Shiftconstcnt2Index-> (regscanupdatestate&Decoder.io.haveshiftconst(1)))
-  ctrlregwenmap +=(IIcntIndex->regscanupdatestate)
+  ctrlregwenmap +=(IIcntIndex->(regscanupdatestate|io.rst))
   ctrlregwenmap +=(FinishIndex->regscanupdatestate)
   ctrlregwenmap +=(KIndex->(regscanupdatestate&Kchange))
   ctrlregwenmap +=(JIndex->(regscanupdatestate&Jchange))
   ctrlregwenmap +=(IIndex->(regscanupdatestate&Ichange))
-  ctrlregwenmap +=(StartcyclecntIndex->io.run)
+  ctrlregwenmap +=(StartcyclecntIndex->(io.run|io.rst))
 
   //fureg
   Fureg.io.inData := Alu.io.result.bits

@@ -40,9 +40,11 @@ class PEDecode extends Module with CGRAparams{
   io.haveshiftconst(0) := io.inst(instmemindex)(Shiftconst1startbit)
   io.haveshiftconst(1) := io.inst(instmemindex)(Shiftconst2startbit)
 
-  io.fuinstskip := (io.iicnt < io.inst(fudelayindex)) ||(io.iicnt >= io.iinum +io.inst(fudelayindex))
+  //io.fuinstskip := (io.iicnt < io.inst(fudelayindex)) ||(io.iicnt >= io.iinum +io.inst(fudelayindex))
+  io.fuinstskip := (io.iicnt < io.inst(fudelayindex))
 
-  (0 until pelinkNum).foreach{ i => io.linkinstskip(i) := (io.iicnt < io.inst(linkdelayindex + i)) ||(io.iicnt >= io.iinum +io.inst(linkdelayindex + i))}
+  //(0 until pelinkNum).foreach{ i => io.linkinstskip(i) := (io.iicnt < io.inst(linkdelayindex + i)) ||(io.iicnt >= io.iinum +io.inst(linkdelayindex + i))}
+  (0 until pelinkNum).foreach{ i => io.linkinstskip(i) := (io.iicnt < io.inst(linkdelayindex + i))}
 
   io.canexe := io.startcyclecnt >= io.startcyclenum
 }
